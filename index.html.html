@@ -1228,8 +1228,8 @@ const isA=()=>me&&me.role==='admin';
 
 
 // ── SUPABASE SYNC ─────────────────────────────────────────────────
-const SB_URL='https://wdkcuoydbjkeoyslpbpv.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indka2N1b3lkYmprZW95c2xwYnB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI2MDMsImV4cCI6MjA4NDE2ODYwM30.WROw47VDb3OEQ-zPDhAQEsEvzWz6ZKqFoCNdwm-SFSs';
+const SB_URL='https://yiudpzzmysymtctcdqvj.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpdWRwenpteXN5bXRjdGNkcXZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NTQ1NDMsImV4cCI6MjA5OTUzMDU0M30.EF0PY7oikEOgwfKOHoBIHF0x6rSN0urB1gzj0LH0Jlg';
 const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
 
 async function sbLoad(){
@@ -1728,18 +1728,20 @@ async function initApp(){
   renderAll();
   document.body.classList.toggle('awards-theme', (document.querySelector('.product-page.active')||{}).id==='page-awardsnew'); // fundo #000 se abrir no Awards
   setInterval(pollUpdates,6000);
-  loadAceleraMembros();
-  setInterval(loadAceleraMembros,60000);
-  loadAceleraLeads();
-  setInterval(loadAceleraLeads,60000);
-  loadAtrLeads();
-  setInterval(loadAtrLeads,60000);
-  loadPartners();
-  setInterval(loadPartners,60000);
-  loadWorkshop();
-  setInterval(loadWorkshop,60000);
-  loadAwards();
-  setInterval(loadAwards,60000);
+  // ── JOTA: integrações extras da ATRINCA desativadas (Acelera Corretor, MailerLite, Partners, Workshop, Awards).
+  //         Reativar quando a JOTA tiver os projetos/fontes equivalentes.
+  // loadAceleraMembros();
+  // setInterval(loadAceleraMembros,60000);
+  // loadAceleraLeads();
+  // setInterval(loadAceleraLeads,60000);
+  // loadAtrLeads();
+  // setInterval(loadAtrLeads,60000);
+  // loadPartners();
+  // setInterval(loadPartners,60000);
+  // loadWorkshop();
+  // setInterval(loadWorkshop,60000);
+  // loadAwards();
+  // setInterval(loadAwards,60000);
 }
 
 async function pollUpdates(){
