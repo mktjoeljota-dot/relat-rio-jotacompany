@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Relatórios</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #181b22;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #10b981;
+    --accent2: #34d399;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Geist', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 30% 60%,rgba(16,185,129,0.08) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(52,211,153,0.05) 0%,transparent 50%),var(--bg); }
+  .login-box { width:380px; padding:2.5rem; background:var(--bg2); border:1px solid var(--border2); border-radius:16px; }
+  .login-logo { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent2); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:2rem; }
+  .login-title { font-size:22px; font-weight:600; margin-bottom:0.3rem; }
+  .login-sub { font-size:14px; color:var(--muted); margin-bottom:2rem; }
+  .form-group { margin-bottom:1.1rem; }
+  .form-group label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .form-group input { width:100%; padding:10px 14px; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none; transition:border 0.2s; }
+  .form-group input:focus { border-color:var(--accent); }
+  .login-btn { width:100%; padding:11px; background:var(--accent); border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; margin-top:0.5rem; transition:opacity 0.2s; }
+  .login-btn:hover { opacity:0.85; }
+  .login-error { font-size:13px; color:var(--red); margin-top:10px; display:none; }
+
+  /* APP */
+  #app { display:none; }
+
+  /* HEADER */
+  .header { background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:60px; position:sticky; top:0; z-index:20; }
+  .header-left { display:flex; align-items:center; gap:2rem; }
+  .brand { font-family:'Space Mono',monospace; font-size:11px; color:var(--accent2); letter-spacing:0.14em; text-transform:uppercase; }
+  .prod-tabs { display:flex; gap:4px; }
+  .prod-tab { padding:7px 20px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid transparent; background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; transition:all 0.18s; }
+  .prod-tab:hover { color:var(--text); background:var(--bg3); }
+  .prod-tab.active { background:var(--accent); color:#fff; }
+  .header-right { display:flex; align-items:center; gap:12px; }
+  .user-badge { font-size:12px; color:var(--muted); }
+  .user-badge strong { color:var(--text); font-weight:500; }
+  .save-btn { padding:7px 18px; background:var(--green); border:none; border-radius:8px; color:#fff; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity 0.2s; }
+  .save-btn:hover { opacity:0.85; }
+  .logout-btn { padding:7px 14px; background:transparent; border:1px solid var(--border2); border-radius:8px; color:var(--muted); font-size:12px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+  .logout-btn:hover { color:var(--red); border-color:var(--red); }
+
+  /* CONTENT */
+  .content { max-width:1100px; margin:0 auto; padding:2.5rem 2rem 5rem; }
+  .product-page { display:none; }
+  .product-page.active { display:block; }
+
+  /* SECTION */
+  .report-section { margin-bottom:3rem; }
+  .section-title-row { display:flex; align-items:center; gap:12px; margin-bottom:1.4rem; }
+  .section-num { width:28px; height:28px; border-radius:50%; background:rgba(16,185,129,0.12); color:var(--accent2); font-size:11px; font-weight:700; font-family:'Space Mono',monospace; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .section-name { font-size:18px; font-weight:600; }
+  .section-meta { font-size:12px; color:var(--muted); margin-left:auto; }
+  .section-divider { height:1px; background:var(--border2); margin-bottom:1.4rem; }
+
+  /* METRIC CARDS */
+  .cards-row { display:grid; gap:12px; }
+  .cards-3 { grid-template-columns:repeat(3,1fr); }
+  .metric-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1.2rem 1.4rem; }
+  .metric-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; }
+  .metric-value { font-size:28px; font-weight:600; font-family:'Space Mono',monospace; line-height:1; }
+  .blue { color:var(--accent2); }
+  .green { color:var(--green); }
+  .amber { color:var(--amber); }
+  .metric-auto { font-size:11px; color:var(--muted); margin-top:8px; }
+  .metric-input { margin-top:10px; width:100%; padding:6px 10px; background:var(--bg3); border:1px solid var(--border2); border-radius:7px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; outline:none; transition:border 0.2s; }
+  .metric-input:focus { border-color:var(--accent); }
+
+  /* TABLE + CHART split */
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+  .split.wide { grid-template-columns:3fr 2fr; }
+
+  /* TABLE BLOCK */
+  .tblock { background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .tblock-head { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1.1rem; border-bottom:1px solid var(--border); }
+  .tblock-label { font-size:12px; color:var(--muted); font-weight:500; }
+  .add-btn { padding:5px 13px; background:transparent; border:1px solid var(--border2); border-radius:6px; color:var(--accent2); font-size:12px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+  .add-btn:hover { background:rgba(16,185,129,0.1); }
+  table.dt { width:100%; border-collapse:collapse; font-size:13px; }
+  table.dt th { padding:9px 13px; text-align:left; font-size:10px; color:var(--muted); letter-spacing:0.07em; text-transform:uppercase; font-weight:500; background:var(--bg3); border-bottom:1px solid var(--border); }
+  table.dt td { padding:9px 13px; border-bottom:1px solid var(--border); }
+  table.dt tbody tr:last-child td { border-bottom:none; }
+  table.dt tfoot td { padding:10px 13px; font-weight:600; color:var(--accent2); background:rgba(16,185,129,0.05); border-top:1px solid var(--border2); }
+  table.dt input[type="text"], table.dt input[type="number"] { background:transparent; border:none; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; width:100%; outline:none; }
+  .pct { color:var(--muted); font-family:'Space Mono',monospace; font-size:12px; }
+  .del-btn { background:transparent; border:none; color:rgba(255,255,255,0.15); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:4px; transition:color 0.15s; }
+  .del-btn:hover { color:var(--red); }
+
+  /* CHART BOX */
+  .cbox { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1.2rem; }
+  .cbox-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:1rem; }
+  .chart-h240 { position:relative; height:240px; }
+  .chart-h280 { position:relative; height:280px; }
+  .chart-h220 { position:relative; height:220px; }
+
+  /* full-width chart below table */
+  .full-cbox { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1.2rem; margin-top:14px; }
+
+  @media(max-width:800px){
+    .cards-3{grid-template-columns:1fr 1fr;}
+    .split,.split.wide{grid-template-columns:1fr;}
+  }
+
+  /* DROPDOWN TAB */
+  .dropdown-tab { position:relative; display:inline-block; }
+  .dropdown-tab .prod-tab { display:flex; align-items:center; gap:4px; }
+  .dropdown-menu {
+    display:none; position:absolute; top:calc(100% + 6px); left:0;
+    background:var(--bg2); border:1px solid var(--border2);
+    border-radius:10px; min-width:190px; z-index:100;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden;
+  }
+  .dropdown-menu.open { display:block; }
+  .dropdown-menu button {
+    display:block; width:100%; padding:10px 16px; text-align:left;
+    background:transparent; border:none; color:var(--muted);
+    font-size:13px; font-weight:500; cursor:pointer;
+    font-family:'Geist',sans-serif; transition:all 0.15s;
+  }
+  .dropdown-menu button:hover { background:var(--bg3); color:var(--text); }
+  .dropdown-menu button.active { color:var(--accent2); background:rgba(16,185,129,0.08); }
+
+  /* ── AWARDS · identidade própria (fundo #000, dourado, Playfair + Inter) ── */
+  body.awards-theme { background:#000; }
+  #page-awardsnew { font-family:'Inter',sans-serif; color:#f1ede4; }
+  #page-awardsnew .metric-card,
+  #page-awardsnew .cbox { background:#0b0b0c; border-color:rgba(201,168,76,0.16); }
+  #page-awardsnew .section-name { font-family:'Playfair Display',serif; font-weight:600; color:#c9a84c; letter-spacing:0.01em; }
+  #page-awardsnew .section-num { background:rgba(201,168,76,0.14); color:#c9a84c; }
+  #page-awardsnew .section-divider { background:rgba(201,168,76,0.16); }
+  #page-awardsnew .metric-value { font-family:'Playfair Display',serif; font-weight:600; color:#c9a84c; }
+  #page-awardsnew .metric-label,
+  #page-awardsnew .cbox-label,
+  #page-awardsnew .metric-auto { font-family:'Inter',sans-serif; color:#9a958a; }
+  #page-awardsnew .section-meta { color:#9a958a; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">▸ Relatórios</div>
+    <div class="login-title">Bem-vindo</div>
+    <div class="login-sub">Acesse o painel de relatórios</div>
+    <div class="form-group"><label>E-mail</label><input type="email" id="ei" placeholder="seu@email.com"></div>
+    <div class="form-group"><label>Senha</label><input type="password" id="pi" placeholder="••••••••"></div>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="lerr">E-mail ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="header">
+    <div class="header-left">
+      <div class="brand">▸ Relatórios</div>
+      <div class="prod-tabs">
+        <button class="prod-tab active" data-prod="awardsnew" onclick="switchProd('awardsnew')">Awards</button>
+        <button class="prod-tab" data-prod="partners" onclick="switchProd('partners')">Partners</button>
+        <button class="prod-tab" data-prod="workshop" onclick="switchProd('workshop')">Workshop Liderança</button>
+        <div class="dropdown-tab" id="dropdown-outros">
+          <button class="prod-tab" data-prod="outros" onclick="toggleDropdown('outros')">Concluídos ▾</button>
+          <div class="dropdown-menu" id="dropdown-menu-outros">
+            <button onclick="selectDropdown('awards')">Awards - Antigo</button>
+            <button class="ao" onclick="selectDropdown('comunidades')">Comunidades</button>
+            <button onclick="selectDropdown('formacaot3')">Formação Vendas T3</button>
+            <button onclick="selectDropdown('formacaot4')">Formação Vendas T4</button>
+            <button onclick="selectDropdown('founders')">Founder</button>
+            <button onclick="selectDropdown('acelera')">Acelera Corretor</button>
+            <button onclick="selectDropdown('lideres')">Formação Líderes T3</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="last-update-badge" style="font-size:11px;color:var(--muted);margin-right:4px;"></div>
+      <div class="user-badge">Bem-vindo, <strong id="uname"></strong></div>
+      <button class="save-btn" id="savebtn" style="display:none" onclick="saveData()">Salvar</button>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ══ PARTNERS ══ -->
+    <div class="product-page" id="page-partners">
+
+      <!-- 1 · FUNIL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Partners</div>
+          <div class="section-meta" id="pt-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas</div>
+            <div class="metric-value blue" id="pt-vis">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads</div>
+            <div class="metric-value blue" id="pt-leads">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">MQL</div>
+            <div class="metric-value green" id="pt-mql">0</div>
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Tx Conversão Leads</div>
+            <div class="metric-value amber" id="pt-txleads">0,00%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Tx Conversão MQL</div>
+            <div class="metric-value amber" id="pt-txmql">0,00%</div>
+          </div>
+        </div>
+        <div class="cbox" style="margin-top:14px">
+          <div class="cbox-label">Leads Diários · últimos 10 dias (role para ver mais antigos)</div>
+          <div id="pt-diario-scroll" style="overflow-x:auto;overflow-y:hidden">
+            <div id="pt-diario-inner" style="height:280px;position:relative">
+              <canvas id="ch-pt-diario"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · ORIGEM DOS LEADS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem dos Leads</div>
+          <div class="section-meta" id="pt-origem-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cbox">
+          <div class="chart-h280"><canvas id="ch-pt-origem"></canvas></div>
+        </div>
+      </div>
+
+      <!-- 3 · QUALIFICAÇÃO MQL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Qualificação MQL</div>
+          <div class="section-meta" id="pt-mql-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cbox" style="margin-bottom:14px">
+          <div class="cbox-label">Modelo de Negócio</div>
+          <div class="chart-h280"><canvas id="ch-pt-modelo"></canvas></div>
+        </div>
+        <div class="cbox" style="margin-bottom:14px">
+          <div class="cbox-label">Ocupação Atual</div>
+          <div class="chart-h280"><canvas id="ch-pt-ocupacao"></canvas></div>
+        </div>
+        <div class="cbox">
+          <div class="cbox-label">Faturamento</div>
+          <div class="chart-h280"><canvas id="ch-pt-faturamento"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /partners -->
+
+    <!-- ══ WORKSHOP LIDERANÇA ══ -->
+    <div class="product-page" id="page-workshop">
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Workshop Liderança</div>
+          <div class="section-meta" id="wk-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas</div>
+            <div class="metric-value blue" id="wk-vis">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads</div>
+            <div class="metric-value blue" id="wk-lds">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Taxa de Conversão</div>
+            <div class="metric-value amber" id="wk-conv">0,00%</div>
+          </div>
+        </div>
+      </div>
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem dos Leads</div>
+          <div class="section-meta" id="wk-origem-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cbox">
+          <div class="chart-h280"><canvas id="ch-wk-origem"></canvas></div>
+        </div>
+      </div>
+    </div><!-- /workshop -->
+
+    <!-- ══ FORMAÇÃO LÍDERES ══ -->
+    <div class="product-page" id="page-lideres">
+
+      <!-- 1 · FUNIL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Formação Líderes T3</div>
+          <div class="section-meta" id="fl-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas na Página</div>
+            <div class="metric-value blue" id="fl-vis">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fl.f.vis=+this.value;flCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads</div>
+            <div class="metric-value blue" id="fl-lds">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fl.f.lds=+this.value;flCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Taxa de Conversão</div>
+            <div class="metric-value amber" id="fl-conv">0,00%</div>
+            <div class="metric-auto">Leads ÷ Visitas — automático</div>
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Vendas</div>
+            <div class="metric-value green" id="fl-vnd">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fl.f.vnd=+this.value;flCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Conversão de Vendas</div>
+            <div class="metric-value amber" id="fl-cvnd">0,00%</div>
+            <div class="metric-auto">Vendas ÷ Leads — automático</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · ORIGEM LEADS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem dos Leads</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('fl-ol')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-fl-ol"></tbody>
+              <tfoot><tr><td>Total</td><td id="tot-fl-ol"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Distribuição</div>
+            <div class="chart-h280"><canvas id="ch-fl-ol"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · ORIGEM VENDAS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Origem das Vendas</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('fl-ov')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-fl-ov"></tbody>
+              <tfoot><tr><td>TOTAL</td><td id="tot-fl-ov"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Vendas por origem</div>
+            <div class="chart-h280"><canvas id="ch-fl-ov"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /lideres -->
+
+    <!-- ══ AWARDS (AUTOMATIZADO) ══ -->
+    <div class="product-page active" id="page-awardsnew">
+
+      <!-- 1 · NÚMEROS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Awards</div>
+          <div class="section-meta" id="awn-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Total de Votos</div>
+            <div class="metric-value green" id="awn-votos">0</div>
+            <div class="metric-auto">Atualizado automaticamente</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Visitas</div>
+            <div class="metric-value blue" id="awn-vis">0</div>
+            <div class="metric-auto">Google Analytics</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Votantes (Leads)</div>
+            <div class="metric-value blue" id="awn-votantes">0</div>
+            <div class="metric-auto">Atualizado automaticamente</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · EVOLUÇÃO DIÁRIA -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Evolução Diária</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cbox">
+          <div class="cbox-label">Leads e Votos por dia (role para ver mais)</div>
+          <div id="awn-diario-scroll" style="overflow-x:auto;overflow-y:hidden">
+            <div id="awn-diario-inner" style="height:280px;position:relative">
+              <canvas id="ch-awn-diario"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · VOTOS POR GRUPO -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Votos por Grupo</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:14px">
+          <div class="metric-card">
+            <div class="metric-label">Internacional</div>
+            <div class="metric-value amber" id="awn-g-int">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Nacional</div>
+            <div class="metric-value amber" id="awn-g-nac">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Regional</div>
+            <div class="metric-value amber" id="awn-g-reg">0</div>
+          </div>
+        </div>
+        <div class="cbox">
+          <div class="cbox-label">Distribuição de votos por grupo</div>
+          <div class="chart-h280"><canvas id="ch-awn-grupo"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /awardsnew -->
+
+    <!-- ══ AWARDS - ANTIGO ══ -->
+    <div class="product-page" id="page-awards">
+
+      <!-- 1 · FUNIL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Funil de Vendas</div>
+          <div class="section-meta" id="aw-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas na Página</div>
+            <div class="metric-value blue" id="aw-vis">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.f.vis=+this.value;awCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Cliques — Checkout</div>
+            <div class="metric-value blue" id="aw-lds">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.f.lds=+this.value;awCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Taxa de Conversão</div>
+            <div class="metric-value amber" id="aw-conv">0,00%</div>
+            <div class="metric-auto">Cliques ÷ Visitas — automático</div>
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Vendas</div>
+            <div class="metric-value green" id="aw-vnd">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.f.vnd=+this.value;set('aw-vnd',this.value)">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Ingressos</div>
+            <div class="metric-value green" id="aw-ing">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.f.ing=+this.value;set('aw-ing',this.value)">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Receita</div>
+            <div class="metric-value amber" id="aw-rec">R$&nbsp;0,00</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.f.rec=+this.value;set('aw-rec',brl(this.value))">
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · ORIGEM DAS VENDAS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem das Vendas</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('aw-ov')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>QTD</th><th>Receita (R$)</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-aw-ov"></tbody>
+              <tfoot><tr><td>TOTAL</td><td id="tot-aw-ov-q"></td><td id="tot-aw-ov-r"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Vendas por origem</div>
+            <div class="chart-h280"><canvas id="ch-aw-ov"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · TRÁFEGO PAGO -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Tráfego Pago</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Investimento</div>
+            <div class="metric-value amber" id="aw-tp-inv">R$&nbsp;0,00</div>
+            <input class="metric-input ao" type="number" value="0" step="0.01" oninput="S.aw.tp.inv=+this.value;set('aw-tp-inv',brl(this.value));awTpCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Alcance</div>
+            <div class="metric-value blue" id="aw-tp-alc">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.tp.alc=+this.value;set('aw-tp-alc',Number(this.value).toLocaleString('pt-BR'))">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">CPM</div>
+            <div class="metric-value blue" id="aw-tp-cpm">R$&nbsp;0,00</div>
+            <input class="metric-input ao" type="number" value="0" step="0.01" oninput="S.aw.tp.cpm=+this.value;set('aw-tp-cpm',brl(this.value))">
+          </div>
+        </div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Cliques</div>
+            <div class="metric-value blue" id="aw-tp-clk">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.tp.clk=+this.value;set('aw-tp-clk',Number(this.value).toLocaleString('pt-BR'));awTpCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">CTR</div>
+            <div class="metric-value blue" id="aw-tp-ctr">0,00%</div>
+            <input class="metric-input ao" type="number" value="0" step="0.01" oninput="S.aw.tp.ctr=+this.value;set('aw-tp-ctr',pctFmt(this.value))">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">CPC</div>
+            <div class="metric-value blue" id="aw-tp-cpc">R$&nbsp;0,00</div>
+            <input class="metric-input ao" type="number" value="0" step="0.01" oninput="S.aw.tp.cpc=+this.value;set('aw-tp-cpc',brl(this.value))">
+          </div>
+        </div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Initiate Checkout</div>
+            <div class="metric-value blue" id="aw-tp-ic">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.tp.ic=+this.value;set('aw-tp-ic',this.value);awTpCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Custo por IC</div>
+            <div class="metric-value amber" id="aw-tp-cpic">R$&nbsp;0,00</div>
+            <div class="metric-auto">Investimento ÷ Initiate Checkout</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Vendas</div>
+            <div class="metric-value green" id="aw-tp-vnd">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.aw.tp.vnd=+this.value;set('aw-tp-vnd',this.value);awTpCalc()">
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Receita</div>
+            <div class="metric-value green" id="aw-tp-rec">R$&nbsp;0,00</div>
+            <input class="metric-input ao" type="number" value="0" step="0.01" oninput="S.aw.tp.rec=+this.value;set('aw-tp-rec',brl(this.value));awTpCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Custo por Venda</div>
+            <div class="metric-value amber" id="aw-tp-cpv">R$&nbsp;0,00</div>
+            <div class="metric-auto">Investimento ÷ Vendas</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">ROAS</div>
+            <div class="metric-value green" id="aw-tp-roas">0,00x</div>
+            <div class="metric-auto">Receita ÷ Investimento</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /awards -->
+
+    <!-- ══ FORMAÇÃO ══ -->
+    <div class="product-page" id="page-formacaot3">
+
+      <!-- 1 · FUNIL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Funil de Leads</div>
+          <div class="section-meta" id="fo-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas na Página</div>
+            <div class="metric-value blue" id="fo-vis">1.071</div>
+            <input class="metric-input ao" type="number" value="1071" oninput="S.fo.f.vis=+this.value;foCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads Gerais</div>
+            <div class="metric-value blue" id="fo-ldsg">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fo.f.ldsg=+this.value;foCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads (passaram pela página)</div>
+            <div class="metric-value blue" id="fo-lds">326</div>
+            <input class="metric-input ao" type="number" value="326" oninput="S.fo.f.lds=+this.value;foCalc()">
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Conversão da Página</div>
+            <div class="metric-value amber" id="fo-conv">30,44%</div>
+            <div class="metric-auto">Leads página ÷ Visitas — automático</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Vendas</div>
+            <div class="metric-value green" id="fo-vnd">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fo.f.vnd=+this.value;foCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Tx de Conversão de Vendas</div>
+            <div class="metric-value amber" id="fo-cvnd">0,00%</div>
+            <div class="metric-auto">Vendas ÷ Leads Gerais — automático</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · ORIGEM LEADS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem dos Leads</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('fo-ol')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-fo-ol"></tbody>
+              <tfoot><tr><td>Total de Leads</td><td id="tot-fo-ol"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Distribuição</div>
+            <div class="chart-h280"><canvas id="ch-fo-ol"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · ORIGEM VENDAS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Origem das Vendas</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('fo-ov')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-fo-ov"></tbody>
+              <tfoot><tr><td>TOTAL</td><td id="tot-fo-ov"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Vendas por origem</div>
+            <div class="chart-h280"><canvas id="ch-fo-ov"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 · RESUMO CANAL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">4</div>
+          <div class="section-name">Resumo por Canal</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="tblock">
+          <div class="tblock-head">
+            <span class="tblock-label">Consolidado</span>
+            <button class="add-btn ao" onclick="addR('fo-rc')">+ Adicionar</button>
+          </div>
+          <table class="dt">
+            <thead><tr><th>Canal</th><th>Lead por Canal</th><th>Lead por Canal %</th><th>Vendas</th><th>Venda por Canal %</th><th class="ao"></th></tr></thead>
+            <tbody id="tb-fo-rc"></tbody>
+            <tfoot><tr>
+              <td>TOTAL</td>
+              <td id="tot-fo-rc-l"></td>
+              <td id="tot-fo-rc-lp" class="pct"></td>
+              <td id="tot-fo-rc-v"></td>
+              <td id="tot-fo-rc-vp" class="pct"></td>
+              <td class="ao"></td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div class="full-cbox">
+          <div class="cbox-label">Lead % vs Venda % por canal</div>
+          <div class="chart-h220"><canvas id="ch-fo-rc"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /formacaot3 -->
+    <!-- ══ FORMAÇÃO VENDAS T4 ══ -->
+    <div class="product-page" id="page-formacaot4">
+
+      <!-- 1 · FUNIL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Funil de Leads</div>
+          <div class="section-meta" id="f4-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas na Página</div>
+            <div class="metric-value blue" id="f4-vis">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.f4.f.vis=+this.value;f4Calc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads Gerais</div>
+            <div class="metric-value blue" id="f4-ldsg">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.f4.f.ldsg=+this.value;f4Calc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads (passaram pela página)</div>
+            <div class="metric-value blue" id="f4-lds">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.f4.f.lds=+this.value;f4Calc()">
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Conversão da Página</div>
+            <div class="metric-value amber" id="f4-conv">0,00%</div>
+            <div class="metric-auto">Leads página ÷ Visitas — automático</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Vendas</div>
+            <div class="metric-value green" id="f4-vnd">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.f4.f.vnd=+this.value;f4Calc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Tx de Conversão de Vendas</div>
+            <div class="metric-value amber" id="f4-cvnd">0,00%</div>
+            <div class="metric-auto">Vendas ÷ Leads Gerais — automático</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · ORIGEM LEADS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem dos Leads</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('f4-ol')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-f4-ol"></tbody>
+              <tfoot><tr><td>Total de Leads</td><td id="tot-f4-ol"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Distribuição</div>
+            <div class="chart-h280"><canvas id="ch-f4-ol"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · ORIGEM VENDAS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Origem das Vendas</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('f4-ov')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-f4-ov"></tbody>
+              <tfoot><tr><td>TOTAL</td><td id="tot-f4-ov"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Vendas por origem</div>
+            <div class="chart-h280"><canvas id="ch-f4-ov"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 · RESUMO CANAL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">4</div>
+          <div class="section-name">Resumo por Canal</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="tblock">
+          <div class="tblock-head">
+            <span class="tblock-label">Consolidado</span>
+            <button class="add-btn ao" onclick="addR('f4-rc')">+ Adicionar</button>
+          </div>
+          <table class="dt">
+            <thead><tr><th>Canal</th><th>Lead por Canal</th><th>Lead por Canal %</th><th>Vendas</th><th>Venda por Canal %</th><th class="ao"></th></tr></thead>
+            <tbody id="tb-f4-rc"></tbody>
+            <tfoot><tr>
+              <td>TOTAL</td>
+              <td id="tot-f4-rc-l"></td>
+              <td id="tot-f4-rc-lp" class="pct"></td>
+              <td id="tot-f4-rc-v"></td>
+              <td id="tot-f4-rc-vp" class="pct"></td>
+              <td class="ao"></td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div class="full-cbox">
+          <div class="cbox-label">Lead % vs Venda % por canal</div>
+          <div class="chart-h220"><canvas id="ch-f4-rc"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /formacaot4 -->
+
+
+    <!-- ══ FOUNDERS ══ -->
+    <div class="product-page" id="page-founders">
+
+      <!-- 1 · FUNIL -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Founder</div>
+          <div class="section-meta" id="fn-meta"></div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:12px">
+          <div class="metric-card">
+            <div class="metric-label">Visitas na Página</div>
+            <div class="metric-value blue" id="fn-vis">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fn.f.vis=+this.value;fnCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads</div>
+            <div class="metric-value blue" id="fn-lds">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fn.f.lds=+this.value;fnCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Taxa de Conversão</div>
+            <div class="metric-value amber" id="fn-conv">0,00%</div>
+            <div class="metric-auto">Leads ÷ Visitas — automático</div>
+          </div>
+        </div>
+        <div class="cards-row cards-3">
+          <div class="metric-card">
+            <div class="metric-label">Vendas</div>
+            <div class="metric-value green" id="fn-vnd">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.fn.f.vnd=+this.value;fnCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Conversão de Vendas</div>
+            <div class="metric-value amber" id="fn-cvnd">0,00%</div>
+            <div class="metric-auto">Vendas ÷ Leads — automático</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · ORIGEM LEADS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Origem dos Leads</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('fn-ol')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-fn-ol"></tbody>
+              <tfoot><tr><td>Total</td><td id="tot-fn-ol"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Distribuição</div>
+            <div class="chart-h280"><canvas id="ch-fn-ol"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 · ORIGEM VENDAS -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">3</div>
+          <div class="section-name">Origem das Vendas</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="split">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Por canal</span>
+              <button class="add-btn ao" onclick="addR('fn-ov')">+ Adicionar</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Origem</th><th>Qtd</th><th>%</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-fn-ov"></tbody>
+              <tfoot><tr><td>TOTAL</td><td id="tot-fn-ov"></td><td class="pct">100%</td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Vendas por origem</div>
+            <div class="chart-h280"><canvas id="ch-fn-ov"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /founders -->
+
+    <!-- ══ COMUNIDADES ══ -->
+    <div class="product-page" id="page-comunidades">
+
+      <!-- 1 · COMUNIDADE ATRE -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Comunidade ATRE</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:1.4rem">
+          <div class="metric-card">
+            <div class="metric-label">Grupos</div>
+            <div class="metric-value blue" id="ca-grupos">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.ca.grupos=+this.value;set('ca-grupos',this.value)">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Membros</div>
+            <div class="metric-value green" id="ca-membros">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.ca.membros=+this.value;set('ca-membros',Number(this.value).toLocaleString('pt-BR'))">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads</div>
+            <div class="metric-value amber" id="ca-leads">0</div>
+            <div class="metric-auto">Atualizado automaticamente</div>
+          </div>
+        </div>
+        <!-- tabela grupos whatsapp -->
+        <div class="tblock" style="margin-bottom:1.4rem">
+          <div class="tblock-head">
+            <span class="tblock-label">Grupos de WhatsApp</span>
+            <button class="add-btn ao" onclick="addComGrupo('ca')">+ Grupo</button>
+          </div>
+          <table class="dt">
+            <thead><tr><th>Grupo</th><th>Membros</th><th>Tx de Ocupação</th><th class="ao"></th></tr></thead>
+            <tbody id="tb-ca-grupos"></tbody>
+          </table>
+        </div>
+        <!-- crescimento diário + gráfico -->
+        <div class="split wide">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Crescimento Diário</span>
+              <button class="add-btn ao" onclick="addComDia('ca')">+ Dia</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Dia</th><th>Membros</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-ca-dias" style="display:block;max-height:252px;overflow-y:auto;width:100%;"></tbody>
+              <tfoot><tr><td>Mais recente</td><td id="tot-ca-dias"></td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Crescimento + tendência</div>
+            <div class="chart-h280"><canvas id="ch-ca-dias"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · COMUNIDADE PODCAST -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">2</div>
+          <div class="section-name">Comunidade Podcast</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:1.4rem">
+          <div class="metric-card">
+            <div class="metric-label">Grupos</div>
+            <div class="metric-value blue" id="cp-grupos">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.cp.grupos=+this.value;set('cp-grupos',this.value)">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Membros</div>
+            <div class="metric-value green" id="cp-membros">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.cp.membros=+this.value;set('cp-membros',Number(this.value).toLocaleString('pt-BR'))">
+          </div>
+        </div>
+        <!-- tabela grupos whatsapp -->
+        <div class="tblock" style="margin-bottom:1.4rem">
+          <div class="tblock-head">
+            <span class="tblock-label">Grupos de WhatsApp</span>
+            <button class="add-btn ao" onclick="addComGrupo('cp')">+ Grupo</button>
+          </div>
+          <table class="dt">
+            <thead><tr><th>Grupo</th><th>Membros</th><th>Tx de Ocupação</th><th class="ao"></th></tr></thead>
+            <tbody id="tb-cp-grupos"></tbody>
+          </table>
+        </div>
+        <!-- crescimento diário + gráfico -->
+        <div class="split wide">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Crescimento Diário</span>
+              <button class="add-btn ao" onclick="addComDia('cp')">+ Dia</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Dia</th><th>Membros</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-cp-dias" style="display:block;max-height:252px;overflow-y:auto;width:100%;"></tbody>
+              <tfoot><tr><td>Mais recente</td><td id="tot-cp-dias"></td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Crescimento + tendência</div>
+            <div class="chart-h280"><canvas id="ch-cp-dias"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /comunidades -->
+
+    <!-- ══ ACELERA CORRETOR ══ -->
+    <div class="product-page" id="page-acelera">
+
+      <!-- 1 · ACELERA CORRETOR -->
+      <div class="report-section">
+        <div class="section-title-row">
+          <div class="section-num">1</div>
+          <div class="section-name">Acelera Corretor</div>
+        </div>
+        <div class="section-divider"></div>
+        <div class="cards-row cards-3" style="margin-bottom:1.4rem">
+          <div class="metric-card">
+            <div class="metric-label">Visitas</div>
+            <div class="metric-value blue" id="cac-visitas">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.cac.visitas=+this.value;cacCalc()">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Leads</div>
+            <div class="metric-value amber" id="cac-leads">0</div>
+            <div class="metric-auto">Atualizado automaticamente</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Conversão da Página</div>
+            <div class="metric-value green" id="cac-conv">0,00%</div>
+            <div class="metric-auto">Leads ÷ Visitas — automático</div>
+          </div>
+        </div>
+        <div class="cards-row cards-3" style="margin-bottom:1.4rem">
+          <div class="metric-card">
+            <div class="metric-label">Grupos</div>
+            <div class="metric-value blue" id="cac-grupos">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.cac.grupos=+this.value;set('cac-grupos',this.value)">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Membros</div>
+            <div class="metric-value green" id="cac-membros">0</div>
+            <input class="metric-input ao" type="number" value="0" oninput="S.cac.membros=+this.value;set('cac-membros',Number(this.value).toLocaleString('pt-BR'))">
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Membros na plataforma</div>
+            <div class="metric-value green" id="cac-plat-membros">—</div>
+            <div class="metric-auto">Atualizado automaticamente</div>
+          </div>
+        </div>
+        <!-- tabela grupos whatsapp -->
+        <div class="tblock" style="margin-bottom:1.4rem">
+          <div class="tblock-head">
+            <span class="tblock-label">Grupos de WhatsApp</span>
+            <button class="add-btn ao" onclick="addComGrupo('cac')">+ Grupo</button>
+          </div>
+          <table class="dt">
+            <thead><tr><th>Grupo</th><th>Membros</th><th>Tx de Ocupação</th><th class="ao"></th></tr></thead>
+            <tbody id="tb-cac-grupos"></tbody>
+          </table>
+        </div>
+        <!-- crescimento diário + gráfico -->
+        <div class="split wide">
+          <div class="tblock">
+            <div class="tblock-head">
+              <span class="tblock-label">Crescimento Diário</span>
+              <button class="add-btn ao" onclick="addComDia('cac')">+ Dia</button>
+            </div>
+            <table class="dt">
+              <thead><tr><th>Dia</th><th>Membros</th><th class="ao"></th></tr></thead>
+              <tbody id="tb-cac-dias" style="display:block;max-height:252px;overflow-y:auto;width:100%;"></tbody>
+              <tfoot><tr><td>Mais recente</td><td id="tot-cac-dias"></td><td class="ao"></td></tr></tfoot>
+            </table>
+          </div>
+          <div class="cbox">
+            <div class="cbox-label">Crescimento + tendência</div>
+            <div class="chart-h280"><canvas id="ch-cac-dias"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /acelera -->
+  </div>
+</div>
+
+<script>
+// ── REGISTER DATALABELS PLUGIN ────────────────────────────────────
+if(typeof ChartDataLabels!=='undefined'){Chart.register(ChartDataLabels);}
+
+// ── AUTH ──────────────────────────────────────────────────────────
+const USERS = {
+  'guilherme@admin.com': { pass:'admin123', role:'admin', name:'Guilherme' },
+  'raphael@atrin.ca':    { pass:'raphael123', role:'viewer', name:'Raphael' }
+};
+let me = null;
+const SESSION_KEY='atre_dash_session';
+['ei','pi'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+
+function enterApp(){ document.getElementById('login-screen').style.display='none'; document.getElementById('app').style.display='block'; initApp(); }
+
+function doLogin(){
+  const email=document.getElementById('ei').value.trim(), pass=document.getElementById('pi').value, u=USERS[email];
+  if(u&&u.pass===pass){ me={email,...u}; try{localStorage.setItem(SESSION_KEY,email);}catch(e){} enterApp(); }
+  else document.getElementById('lerr').style.display='block';
+}
+function doLogout(){ me=null; try{localStorage.removeItem(SESSION_KEY);}catch(e){} document.getElementById('app').style.display='none'; document.getElementById('login-screen').style.display='flex'; document.getElementById('ei').value=''; document.getElementById('pi').value=''; }
+// Restaura a sessão salva no refresh (login só existe em memória; sem isto o refresh desloga).
+// Revalida contra USERS: se o e-mail não existir mais, ignora a sessão.
+function restoreSession(){
+  let email=null; try{email=localStorage.getItem(SESSION_KEY);}catch(e){}
+  const u=email&&USERS[email];
+  if(u){ me={email,...u}; enterApp(); }
+}
+const isA=()=>me&&me.role==='admin';
+
+
+// ── SUPABASE SYNC ─────────────────────────────────────────────────
+const SB_URL='https://wdkcuoydbjkeoyslpbpv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indka2N1b3lkYmprZW95c2xwYnB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI2MDMsImV4cCI6MjA4NDE2ODYwM30.WROw47VDb3OEQ-zPDhAQEsEvzWz6ZKqFoCNdwm-SFSs';
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
+async function sbLoad(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/dashboard_state?id=eq.main&select=data,updated_at',{headers:SB_HDR});
+    const rows=await r.json();
+    if(rows&&rows.length&&rows[0].data&&Object.keys(rows[0].data).length>0){
+      return {state:rows[0].data,ts:rows[0].updated_at};
+    }
+  }catch(e){console.warn('sbLoad error',e);}
+  return null;
+}
+
+async function sbSave(stateObj){
+  try{
+    await fetch(SB_URL+'/rest/v1/dashboard_state?id=eq.main',{
+      method:'PATCH',
+      headers:{...SB_HDR,'Prefer':'return=minimal'},
+      body:JSON.stringify({data:stateObj,updated_at:new Date().toISOString()})
+    });
+  }catch(e){console.warn('sbSave error',e);}
+}
+
+// ── ACELERA CORRETOR · contagem de membros (projeto Supabase separado) ──
+const SB_AC_URL='https://fnbdxhpuzooisisbevzv.supabase.co';
+const SB_AC_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuYmR4aHB1em9vaXNpc2Jldnp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1OTA5MzEsImV4cCI6MjA5NDE2NjkzMX0.yK_RO9953JWN2XpJg6eCCvwpLJU_BzLKd3cdwMUjXDw';
+async function loadAceleraMembros(){
+  try{
+    const r=await fetch(SB_AC_URL+'/rest/v1/perfis?select=*',{
+      method:'HEAD',
+      headers:{
+        'apikey':SB_AC_KEY,
+        'Authorization':'Bearer '+SB_AC_KEY,
+        'Prefer':'count=exact',
+        'Range-Unit':'items',
+        'Range':'0-0'
+      }
+    });
+    const cr=r.headers.get('content-range');
+    const total=cr?parseInt(cr.split('/')[1],10):NaN;
+    const el=document.getElementById('cac-plat-membros');
+    if(el&&Number.isFinite(total)) el.textContent=total.toLocaleString('pt-BR');
+  }catch(e){console.warn('loadAceleraMembros erro',e);}
+}
+
+// ── MAILERLITE · contagem de leads do grupo Acelera Corretor ──
+const ML_KEY='eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiOTEyMmRhMTg1ZjNkZWQ4NzEzMDZkOTQ2NGM3YjFjZGIwNDNiYTg3MTMzNTA2MDc0NDEzODEwNzkzNzQ4ODhlOWNlMjY1NThlMzIxMjRkZTAiLCJpYXQiOjE3NzkyOTMyNzQuNzgxODAzLCJuYmYiOjE3NzkyOTMyNzQuNzgxODA2LCJleHAiOjQ5MzQ5NjY4NzQuNzc1OTU3LCJzdWIiOiIyMDU3MzE0Iiwic2NvcGVzIjpbXX0.KmNhsqHAEAB1eRaXRS9l1oA5aDf6tuDoD5jnQT6p_5tkPZGox2zAi7Ln_0zuVTMMOmfbWrMtr536freSXvx2SOSrS9D65d6BGqLyEEJsAWIHdE5tpO3O5fIRQtLDU3cYspo0G-RITlBRyEC7Fl5LQJzysJSsBdt7KtjxAiK-pSaOxBiRBDhx-m3fZA3DW1hqdLne5UO6WwyqfDF2EQokU8SjfRPR2IuOxNhnuyhtAkrPzzyxCEo2u7FIZ0UGTkwi_oufnR3Mur_jeYFIz1yzlpgoZmdQH6Zngq3ac-gHuEYEo7IYpP1fsanRXA679DfqzfHs5OKOdNm5-N3rzCv_Y8n_lLGH9GoK4lrl4IUd4Oj3maSMrt2Gi-kSSOWIGPMboAMBeXjLtpclMST7PQ-qCiSt6IDDbxy8e0uqKPJVC683OwdmL4IdZy4pi2yws7m5nqlFG29_2gK1TPt8ni7zBgvWeHSTeQ0bhMLs0a4fMrMmyuTA3SvYYI2MmVwbvsKrTsriS0yRlhnXRgX7cyXwzoK6pqWLhALLmKIh7Gutcn29z3rBfqn__ke6oWQUorygxCbM0w228z4Ec7v1tfbjkiiuC1GXxUcftn8KhTQfYDr9Ulznfqm1ZE75YjP5EMOx6Wb4BdT0T1DkyBW39JVXT05BlUdl2PeA6XLeJOzzIDY';
+const ML_GROUP_ID='185032858823296506';
+const ML_ATRE_GROUP_ID='177685943240623449';
+let _mlLeadsCached=null;
+let _mlLeadsAtreCache=null;
+function applyMlLeads(){
+  if(_mlLeadsCached!=null && S && S.cac) S.cac.leads=_mlLeadsCached;
+}
+function applyAtrLeads(){
+  if(_mlLeadsAtreCache!=null && S && S.ca) S.ca.leads=_mlLeadsAtreCache;
+}
+async function loadAceleraLeads(){
+  try{
+    const r=await fetch('https://connect.mailerlite.com/api/groups/'+ML_GROUP_ID,{
+      headers:{
+        'Authorization':'Bearer '+ML_KEY,
+        'Accept':'application/json'
+      }
+    });
+    const j=await r.json();
+    const total=j.data.active_count;
+    if(Number.isFinite(total)){
+      _mlLeadsCached=total;
+      applyMlLeads();
+      cacCalc();
+    }
+  }catch(e){console.warn('loadAceleraLeads erro',e);}
+}
+async function loadAtrLeads(){
+  try{
+    const r=await fetch('https://connect.mailerlite.com/api/groups/'+ML_ATRE_GROUP_ID,{
+      headers:{
+        'Authorization':'Bearer '+ML_KEY,
+        'Accept':'application/json'
+      }
+    });
+    const j=await r.json();
+    const total=j.data.active_count;
+    if(Number.isFinite(total)){
+      _mlLeadsAtreCache=total;
+      applyAtrLeads();
+      comCalc();
+    }
+  }catch(e){console.warn('loadAtrLeads erro',e);}
+}
+
+// ── PARTNERS · leads_partners (Supabase) ──────────────────────────
+let _ptData={leads:0,mql:0,modelo:{},ocupacao:{},faturamento:{},origem:{},diario:{}};
+const ptEmpty=v=>v===null||v===undefined||String(v).trim()==='';
+const ptLabel=v=>ptEmpty(v)?'(não informado)':String(v).trim();
+function ptBump(map,key){map[key]=(map[key]||0)+1;}
+
+async function loadPartners(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/leads_partners?select=modelo_negocio,ocupacao,faturamento,origem,data',{headers:SB_HDR});
+    const rows=await r.json();
+    if(!Array.isArray(rows)) return;
+    let leads=0,mql=0;
+    const modelo={},ocupacao={},faturamento={},origem={},diario={};
+    rows.forEach(row=>{
+      leads++; // toda linha conta como 1 lead
+      ptBump(origem,ptEmpty(row.origem)?'Sem Origem':String(row.origem).trim());
+      if(!ptEmpty(row.data)) ptBump(diario,String(row.data).slice(0,10));
+      if(ptEmpty(row.modelo_negocio)) return; // sem modelo de negócio = lead, mas ainda não é MQL
+      mql++; // MQL é subconjunto dos leads (tem modelo de negócio preenchido)
+      ptBump(modelo,String(row.modelo_negocio).trim());
+      ptBump(ocupacao,ptLabel(row.ocupacao));
+      ptBump(faturamento,ptLabel(row.faturamento));
+    });
+    _ptData={leads,mql,modelo,ocupacao,faturamento,origem,diario};
+    ptCalc();
+    ptCharts();
+  }catch(e){console.warn('loadPartners erro',e);}
+}
+
+function ptCalc(){
+  if(!S.pt) S.pt={f:{vis:0}};
+  if(!S.pt.f) S.pt.f={vis:(+S.pt.vis||0)}; // migra estrutura antiga pt.vis -> pt.f.vis
+  const vis=+S.pt.f.vis||0, leads=_ptData.leads, mql=_ptData.mql;
+  set('pt-vis',vis.toLocaleString('pt-BR'));
+  set('pt-leads',leads.toLocaleString('pt-BR'));
+  set('pt-mql',mql.toLocaleString('pt-BR'));
+  set('pt-txleads',pctFmt(vis>0?(leads/vis*100):0));
+  set('pt-txmql',pctFmt(leads>0?(mql/leads*100):0));
+}
+
+function ptCharts(){
+  ptDailyChart();
+  ptBarH('ch-pt-origem',_ptData.origem);
+  ptBarH('ch-pt-modelo',_ptData.modelo);
+  ptBarH('ch-pt-ocupacao',_ptData.ocupacao);
+  ptBarH('ch-pt-faturamento',_ptData.faturamento);
+}
+
+function ptDailyChart(){ dailyColChart('ch-pt-diario','pt-diario-scroll','pt-diario-inner',_ptData.diario); }
+
+// ── WORKSHOP LIDERANÇA · leads + origem do grupo MailerLite ───────
+// Pagina os assinantes do grupo (cursor via links.next), conta os ATIVOS
+// para o card de Leads e monta a Origem = utm_source · utm_medium.
+// Visitas: continuam vindo do dashboard_state (wk.f.vis, manual/N8N).
+const ML_WK_GROUP_ID='185999036928492846';
+let _wkLeads=0;
+let _wkOrigem={};
+function wkBump(map,key){map[key]=(map[key]||0)+1;}
+// Normaliza UTMs (grafias inconsistentes na origem): junta sinônimos de fonte,
+// unifica caixa/separadores e remove prefixo de fonte repetido no medium.
+const WK_SRC_MAP={ig:'Instagram',instagram:'Instagram',youtube:'YouTube',whatsapp:'WhatsApp',ebook:'Base'};
+const WK_SRC_ONLY={Spotify:1,YouTube:1,Base:1,WhatsApp:1}; // fontes que mostram só a origem (sem medium)
+const WK_ORIGEM_MAP={'Site · Cezar':'Instagram · Cezar'}; // remap de rótulo final (junta origens equivalentes)
+function wkSlug(v){return (''+(v||'')).trim().toLowerCase().replace(/[\s_\-]+/g,' ').trim();}
+function wkTitle(s){
+  return s.split(' ').map(w=>w?w.charAt(0).toUpperCase()+w.slice(1):w).join(' ')
+          .replace(/\bAtre\b/g,'ATRE').replace(/\bQrcode\b/g,'QRCode');
+}
+function wkNormSource(v){const c=wkSlug(v);if(!c)return '';return WK_SRC_MAP[c]||wkTitle(c);}
+function wkNormMedium(v,src){
+  let t=wkSlug(v).split(' ').filter(Boolean);if(!t.length)return '';
+  if(t.length>1&&WK_SRC_MAP[t[0]]&&WK_SRC_MAP[t[0]]===src) t.shift(); // remove fonte repetida no início
+  return wkTitle(t[0]||''); // agrupa pela "família" da campanha (1º token: ATRE = ATRE Automacao = ATRE Boas Vindas)
+}
+function wkOrigemLabel(f){
+  const s=wkNormSource(f&&f.utm_source);
+  let label;
+  if(WK_SRC_ONLY[s]) label=s; // Spotify/YouTube/Base/WhatsApp: só a fonte
+  else { const m=wkNormMedium(f&&f.utm_medium,s); label=(!s&&!m)?'Sem origem':[s,m].filter(Boolean).join(' · '); }
+  return WK_ORIGEM_MAP[label]||label;
+}
+async function loadWorkshop(){
+  try{
+    let url='https://connect.mailerlite.com/api/subscribers?filter[group]='+ML_WK_GROUP_ID+'&limit=1000';
+    let leads=0; const origem={}; let guard=0;
+    while(url && guard<20){
+      const r=await fetch(url,{headers:{'Authorization':'Bearer '+ML_KEY,'Accept':'application/json'}});
+      const j=await r.json();
+      if(!j||!Array.isArray(j.data)) break;
+      j.data.forEach(sub=>{
+        if(sub.status!=='active') return; // só leads ativos (igual ao card de Leads)
+        leads++;
+        wkBump(origem,wkOrigemLabel(sub.fields));
+      });
+      url=(j.links&&j.links.next)||null;
+      guard++;
+    }
+    _wkLeads=leads;
+    _wkOrigem=origem;
+    wkCalc();
+    wkCharts();
+  }catch(e){console.warn('loadWorkshop erro',e);}
+}
+
+function wkCalc(){
+  if(!S.wk) S.wk={f:{vis:0,lds:0}};
+  if(!S.wk.f) S.wk.f={vis:0,lds:0};
+  const vis=+S.wk.f.vis||0, lds=_wkLeads;
+  set('wk-vis',vis.toLocaleString('pt-BR'));
+  set('wk-lds',lds.toLocaleString('pt-BR'));
+  set('wk-conv',pctFmt(vis>0?(lds/vis*100):0));
+}
+function wkGroupOutros(map){ // origens com <=2 leads viram "Outros"
+  const out={}; let outros=0;
+  for(const k in map){ if(map[k]<=2) outros+=map[k]; else out[k]=map[k]; }
+  if(outros>0) out['Outros']=(out['Outros']||0)+outros;
+  return out;
+}
+function wkCharts(){ ptBarH('ch-wk-origem',wkGroupOutros(_wkOrigem)); }
+
+// ── AWARDS (AUTOMATIZADO) · votos / votantes / grupos (projeto Supabase "Awards") ──
+// Projeto separado (dtcpeneuitjbdxmtzdoc). As tabelas votes/voters têm RLS e NÃO são
+// legíveis via anon; por isso lemos só os AGREGADOS via RPC awards_public_stats()
+// (SECURITY DEFINER, retorna apenas contagens — nenhum dado pessoal/CPF/email).
+// Visitas continuam vindo do dashboard_state (awn.f.vis, GA4/N8N), igual Partners/Workshop.
+const SB_AW_URL='https://dtcpeneuitjbdxmtzdoc.supabase.co';
+const SB_AW_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0Y3BlbmV1aXRqYmR4bXR6ZG9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTUwNTIsImV4cCI6MjA5NzQ3MTA1Mn0.xCubkFaZmAwmw8oiOyipcM0QN-OnC-BuicK4tT_iQVo';
+let _awnVotos=0,_awnVotantes=0,_awnGrupos={},_awnVotosDia={},_awnLeadsDia={};
+async function loadAwards(){
+  try{
+    const r=await fetch(SB_AW_URL+'/rest/v1/rpc/awards_public_stats',{
+      method:'POST',
+      headers:{'apikey':SB_AW_KEY,'Authorization':'Bearer '+SB_AW_KEY,'Content-Type':'application/json'},
+      body:'{}'
+    });
+    const j=await r.json();
+    if(!j||typeof j!=='object') return;
+    _awnVotos=+j.total_votos||0;
+    _awnVotantes=+j.total_votantes||0;
+    _awnGrupos=j.votos_por_grupo||{};
+    _awnVotosDia=j.votos_por_dia||{};
+    _awnLeadsDia=j.votantes_por_dia||{};
+    awnCalc();
+    awnCharts();
+  }catch(e){console.warn('loadAwards erro',e);}
+}
+function awnCalc(){
+  if(!S.awn) S.awn={f:{vis:0}};
+  if(!S.awn.f) S.awn.f={vis:0};
+  set('awn-votos',_awnVotos.toLocaleString('pt-BR'));
+  set('awn-votantes',_awnVotantes.toLocaleString('pt-BR'));
+  set('awn-vis',(+S.awn.f.vis||0).toLocaleString('pt-BR'));
+  set('awn-g-int',(+_awnGrupos['Internacional']||0).toLocaleString('pt-BR'));
+  set('awn-g-nac',(+_awnGrupos['Nacional']||0).toLocaleString('pt-BR'));
+  set('awn-g-reg',(+_awnGrupos['Regional']||0).toLocaleString('pt-BR'));
+}
+function awnCharts(){
+  const order=['Internacional','Nacional','Regional'];
+  const map={};
+  order.forEach(k=>{ map[k]=+_awnGrupos[k]||0; });
+  for(const k in _awnGrupos){ if(!(k in map)) map[k]=+_awnGrupos[k]||0; } // grupos extras, se houver
+  ptBarH('ch-awn-grupo',map,['#c9a84c','#d8c296','#8a6f3a','#f4e4b0']); // paleta Awards (dourados)
+  awnDailyChart();
+}
+
+// Colunas agrupadas: Leads (votantes) e Votos por dia, com legenda de séries + scroll.
+function awnDailyChart(){
+  const id='ch-awn-diario';
+  dch(id);
+  const scroll=document.getElementById('awn-diario-scroll');
+  const inner=document.getElementById('awn-diario-inner');
+  const ctx=document.getElementById(id);
+  if(!ctx||!scroll||!inner) return;
+  const leadsMap=_awnLeadsDia||{}, votosMap=_awnVotosDia||{};
+  const keys=[...new Set(Object.keys(leadsMap).concat(Object.keys(votosMap)))].sort(); // 'YYYY-MM-DD' asc
+  if(!keys.length){ inner.style.width='100%'; return; }
+  // preenche dias contínuos (com zeros nos vazios), antigo à esquerda / recente à direita
+  const days=[];
+  let d=new Date(keys[0]+'T00:00:00');
+  const end=new Date(keys[keys.length-1]+'T00:00:00');
+  while(d<=end){
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+    d.setDate(d.getDate()+1);
+  }
+  const labels=days.map(k=>{const p=k.split('-');return p[2]+'/'+p[1];});
+  const leadsData=days.map(k=>leadsMap[k]||0);
+  const votosData=days.map(k=>votosMap[k]||0);
+  const dl={anchor:'end',align:'top',offset:2,clamp:true,color:'#f1ede4',font:{family:"'Inter'",size:10,weight:'600'},formatter:(v)=>v?Number(v).toLocaleString('pt-BR'):''};
+  const tickAw={color:'#9a958a',font:{family:"'Inter'",size:10}};
+  const vw=scroll.clientWidth||600;
+  const perDay=Math.max(70,vw/8); // 2 barras por dia => um pouco mais largo
+  inner.style.width=Math.max(vw,Math.round(days.length*perDay))+'px';
+  CHS[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'Leads',data:leadsData,backgroundColor:'rgba(201,168,76,0.7)',borderColor:'#c9a84c',borderWidth:1,borderRadius:4,datalabels:dl},
+    {label:'Votos',data:votosData,backgroundColor:'rgba(244,228,176,0.55)',borderColor:'#f4e4b0',borderWidth:1,borderRadius:4,datalabels:dl}
+  ]},options:{layout:{padding:{top:22}},plugins:{legend:{display:true,labels:{color:'#f1ede4',font:{family:"'Inter'",size:12},boxWidth:12,padding:16}},tooltip:TT,datalabels:dl},scales:{x:{grid:{display:false},ticks:{...tickAw,maxRotation:0,autoSkip:false}},y:{beginAtZero:true,grace:'12%',grid:GR,ticks:{...tickAw,precision:0}}},maintainAspectRatio:false}});
+  scroll.scrollLeft=scroll.scrollWidth; // foca no mais recente
+}
+
+function dailyColChart(id,scrollId,innerId,srcMap){
+  dch(id);
+  const scroll=document.getElementById(scrollId);
+  const inner=document.getElementById(innerId);
+  const ctx=document.getElementById(id);
+  if(!ctx||!scroll||!inner) return;
+  const map=srcMap||{};
+  const keys=Object.keys(map).sort(); // 'YYYY-MM-DD' ascendente => antigo..recente
+  if(!keys.length){ inner.style.width='100%'; return; }
+  // preenche dias contínuos do mais antigo ao mais recente (com zeros nos vazios)
+  const days=[];
+  let d=new Date(keys[0]+'T00:00:00');
+  const end=new Date(keys[keys.length-1]+'T00:00:00');
+  while(d<=end){
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+    d.setDate(d.getDate()+1);
+  }
+  const labels=days.map(k=>{const p=k.split('-');return p[2]+'/'+p[1];});
+  const data=days.map(k=>map[k]||0);
+  // ~1/10 da largura visível por dia => 10 dias preenchem a viewport; o resto vira scroll
+  const vw=scroll.clientWidth||600;
+  const perDay=Math.max(44,vw/10);
+  inner.style.width=Math.max(vw,Math.round(days.length*perDay))+'px';
+  CHS[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data,backgroundColor:'rgba(59,130,246,0.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:4,datalabels:{anchor:'end',align:'top',offset:2,clamp:true,color:'#e8eaf0',font:{family:"'Geist'",size:11,weight:'600'},formatter:(v)=>v?Number(v).toLocaleString('pt-BR'):''}}]},options:{layout:{padding:{top:22}},plugins:{legend:noLegend,tooltip:TT},scales:{x:{grid:{display:false},ticks:{...TX,font:{size:10,family:"'Geist'"},maxRotation:0,autoSkip:false}},y:{beginAtZero:true,grace:'12%',grid:GR,ticks:{...TX,precision:0}}},maintainAspectRatio:false}});
+  // foca no mais recente (encostado à direita)
+  scroll.scrollLeft=scroll.scrollWidth;
+}
+
+function ptBarH(id,map,colors){
+  dch(id);const ctx=document.getElementById(id);if(!ctx)return;
+  const PAL=colors||CLRS;
+  const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const labels=entries.map(e=>e[0]);
+  const data=entries.map(e=>e[1]);
+  const total=data.reduce((a,b)=>a+b,0);
+  CHS[id]=new Chart(ctx,{type:'bar',data:{labels:labels.map(l=>shrt(l,24)),datasets:[{data,backgroundColor:data.map((_,i)=>PAL[i%PAL.length]+'aa'),borderColor:data.map((_,i)=>PAL[i%PAL.length]),borderWidth:1,borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:46}},plugins:{legend:noLegend,tooltip:TT,datalabels:{anchor:'end',align:'right',offset:4,clamp:true,color:'#9ca3af',font:{family:"'Geist'",size:10,weight:'500'},formatter:(v)=>{if(!v)return '';const p=total>0?Math.round(v/total*100):0;return v+' · '+p+'%';}}},scales:{x:{beginAtZero:true,grid:GR,ticks:{...TX,precision:0}},y:{grid:{display:false},ticks:{...TX,font:{size:10,family:"'Geist'"}}}},maintainAspectRatio:false}});
+}
+
+function tsToStr(iso){
+  if(!iso) return null;
+  const d=new Date(iso);
+  return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+let _lastSbTs=null;
+
+const DEFAULT_STATE={
+  aw:{
+    f:{vis:0,lds:0,vnd:0,ing:0,rec:0},
+    ov:[],
+    tp:{inv:0,alc:0,cpm:0,clk:0,ctr:0,cpc:0,ic:0,vnd:0,rec:0}
+  },
+  fo:{
+    f:{vis:1071,ldsg:0,lds:326,vnd:0},
+    ol:[
+      {o:'IG ATRE',v:367},{o:'API',v:349},{o:'Indicação',v:258},
+      {o:'Email',v:40},{o:'Lucas',v:25},{o:'IG Cezar',v:15},
+      {o:'Qual e a Chave',v:4},{o:'Cintia',v:4},{o:'Guilherme',v:3}
+    ],
+    ov:[
+      {o:'Indicação',v:15},{o:'Instagram ATRE',v:10},{o:'Cortesia',v:10},
+      {o:'Lucas',v:6},{o:'Instagram - Cezar',v:2},{o:'Email',v:2},
+      {o:'Guilherme',v:1},{o:'Outras Formações',v:1},
+      {o:'Live Lucas - Guilherme',v:1},{o:'Leads Partners',v:1},
+      {o:'Formulário (Sem Origem)',v:2}
+    ],
+    rc:[
+      {c:'Canais ATRE (Base, API, Redes Sociais)',vnd:19,lp:0},
+      {c:'Indicações',vnd:17,lp:0},
+      {c:'Cortesia',vnd:9,lp:0},
+      {c:'Lucas',vnd:6,lp:0},
+      {c:'Guilherme',vnd:1,lp:0},
+      {c:'Live Lucas - Guilherme',vnd:1,lp:0}
+    ]
+  }
+  ,
+  fl:{
+    f:{vis:0,lds:0,vnd:0},
+    ol:[],
+    ov:[]
+  },
+  fn:{
+    f:{vis:0,lds:0,vnd:0},
+    ol:[],
+    ov:[]
+  },
+  f4:{
+    f:{vis:0,ldsg:0,lds:0,vnd:0},
+    ol:[],
+    ov:[],
+    rc:[]
+  },
+  ca:{grupos:0,membros:0,leads:0,wgroups:[],dias:[]},
+  cp:{grupos:0,membros:0,wgroups:[],dias:[]},
+  cac:{grupos:0,membros:0,visitas:0,leads:0,wgroups:[],dias:[]},
+  pt:{f:{vis:0}},
+  wk:{f:{vis:0,lds:0},diario:{}},
+  awn:{f:{vis:0}}
+};
+
+
+function deepClone(o){return JSON.parse(JSON.stringify(o));}
+let S=deepClone(DEFAULT_STATE);
+
+
+// ── SORT STATE ────────────────────────────────────────────────────
+const SS={};
+function toggleSort(tid,key){
+  const prev=SS[tid];
+  SS[tid]=(prev&&prev.key===key&&prev.dir==='desc')?{key,dir:'asc'}:{key,dir:'desc'};
+  RE[tid]();
+}
+function applySort(arr,tid,defVal){
+  const ss=SS[tid];
+  const s=[...arr];
+  if(!ss) return s.sort((a,b)=>b[defVal]-a[defVal]);
+  const {key,dir}=ss;
+  return s.sort((a,b)=>{
+    let va=a[key],vb=b[key];
+    if(typeof va==='string') return dir==='asc'?va.localeCompare(vb,'pt'):vb.localeCompare(va,'pt');
+    return dir==='asc'?va-vb:vb-va;
+  });
+}
+function si(tid,key){ // sort icon
+  const ss=SS[tid];
+  if(!ss||ss.key!==key) return '<span style="opacity:.25;font-size:10px;margin-left:3px;">↕</span>';
+  return ss.dir==='desc'?'<span style="color:var(--accent2);font-size:10px;margin-left:3px;">↓</span>':'<span style="color:var(--accent2);font-size:10px;margin-left:3px;">↑</span>';
+}
+function thS(tid,key,label,extra=''){
+  return `<th style="cursor:pointer;user-select:none;${extra}" onclick="toggleSort('${tid}','${key}')">${label}${si(tid,key)}</th>`;
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────
+const brl=v=>'R$\u00a0'+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2});
+const pctFmt=v=>Number(v).toFixed(2).replace('.',',')+'\u0025';
+const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
+const shrt=(s,n=24)=>s.length>n?s.slice(0,n)+'…':s;
+const sum=arr=>arr.reduce((a,b)=>a+b,0);
+const CLRS=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1','#a855f7','#14b8a6'];
+const CHS={};
+const TT={backgroundColor:'#1f2937',titleColor:'#e8eaf0',bodyColor:'#9ca3af',padding:10,cornerRadius:8,borderColor:'rgba(255,255,255,0.08)',borderWidth:1};
+const TX={color:'#6b7280',font:{family:"'Geist'",size:11}};
+const GR={color:'rgba(255,255,255,0.05)'};
+const noLegend={display:false};
+function dch(id){if(CHS[id]){CHS[id].destroy();delete CHS[id];}}
+function nowStr(){return new Date().toLocaleDateString('pt-BR')+' às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+
+
+// ── INIT ───────────────────────────────────────────────────────────
+function renderAll(){
+  awCalc(); awTpCalc(); foCalc(); f4Calc(); fnCalc(); flCalc(); comCalc(); ptCalc(); ptCharts(); wkCalc(); wkCharts(); awnCalc(); awnCharts();
+  renderAwOv();
+  renderFoOl(); renderFoOv(); renderFoRc();
+  renderFnOl(); renderFnOv();
+  renderFlOl(); renderFlOv();
+  renderF4Ol(); renderF4Ov(); renderF4Rc();
+  renderComGrupos('ca'); renderComGrupos('cp'); renderComGrupos('cac');
+  renderComDias('ca'); renderComDias('cp'); renderComDias('cac');
+}
+
+function setTsBadge(t){
+  set('last-update-badge','Última atualização: '+t);
+  set('aw-meta',t); set('fo-meta',t); set('fn-meta',t); set('f4-meta',t); set('fl-meta',t); set('pt-meta',t); set('awn-meta',t);
+}
+
+async function initApp(){
+  set('uname',me.role==='viewer'?'meu patrão':me.name);
+  document.getElementById('savebtn').style.display=isA()?'block':'none';
+  document.querySelectorAll('.ao').forEach(el=>el.style.display=isA()?'':'none');
+  setTsBadge('Carregando...');
+  const remote=await sbLoad();
+  if(remote){
+    S=remote.state;
+    // ensure new keys exist if loading old data
+    if(!S.fn) S.fn={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+    if(!S.aw.ov) S.aw.ov=[];
+    if(!S.aw.tp) S.aw.tp={inv:0,alc:0,cpm:0,clk:0,ctr:0,cpc:0,ic:0,vnd:0,rec:0};
+    if(!S.fl) S.fl={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+    if(!S.f4) S.f4={f:{vis:0,ldsg:0,lds:0,vnd:0},ol:[],ov:[],rc:[]};
+    if(!S.ca) S.ca={grupos:0,membros:0,leads:0,wgroups:[],dias:[]};
+    if(!S.ca.wgroups) S.ca.wgroups=[];
+    if(!S.ca.dias) S.ca.dias=[];
+    if(!S.cp) S.cp={grupos:0,membros:0,wgroups:[],dias:[]};
+    if(!S.cp.wgroups) S.cp.wgroups=[];
+    if(!S.cp.dias) S.cp.dias=[];
+    if(!S.cac) S.cac={grupos:0,membros:0,wgroups:[],dias:[]};
+    if(!S.cac.wgroups) S.cac.wgroups=[];
+    if(!S.cac.dias) S.cac.dias=[];
+    if(!S.pt) S.pt={f:{vis:0}};
+    if(!S.pt.f) S.pt.f={vis:(+S.pt.vis||0)};
+    if(!S.wk) S.wk={f:{vis:0,lds:0},diario:{}};
+    if(!S.wk.f) S.wk.f={vis:0,lds:0};
+    if(!S.wk.diario) S.wk.diario={};
+    if(!S.awn) S.awn={f:{vis:0}};
+    if(!S.awn.f) S.awn.f={vis:0};
+    if(S.fo.f.ldsg===undefined) S.fo.f.ldsg=0;
+    if(!S.fo.f.vnd) S.fo.f.vnd=0;
+    _lastSbTs=remote.ts;
+    setTsBadge(tsToStr(remote.ts)||nowStr());
+  } else {
+    setTsBadge(nowStr());
+  }
+  applyMlLeads();
+  applyAtrLeads();
+  renderAll();
+  document.body.classList.toggle('awards-theme', (document.querySelector('.product-page.active')||{}).id==='page-awardsnew'); // fundo #000 se abrir no Awards
+  setInterval(pollUpdates,6000);
+  loadAceleraMembros();
+  setInterval(loadAceleraMembros,60000);
+  loadAceleraLeads();
+  setInterval(loadAceleraLeads,60000);
+  loadAtrLeads();
+  setInterval(loadAtrLeads,60000);
+  loadPartners();
+  setInterval(loadPartners,60000);
+  loadWorkshop();
+  setInterval(loadWorkshop,60000);
+  loadAwards();
+  setInterval(loadAwards,60000);
+}
+
+async function pollUpdates(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/dashboard_state?id=eq.main&select=updated_at',{headers:SB_HDR});
+    const rows=await r.json();
+    if(!rows||!rows.length) return;
+    const newTs=rows[0].updated_at;
+    if(newTs!==_lastSbTs){
+      _lastSbTs=newTs;
+      const remote=await sbLoad();
+      if(remote){
+        S=remote.state;
+        if(!S.fn) S.fn={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+    if(!S.aw.ov) S.aw.ov=[];
+    if(!S.aw.tp) S.aw.tp={inv:0,alc:0,cpm:0,clk:0,ctr:0,cpc:0,ic:0,vnd:0,rec:0};
+    if(!S.fl) S.fl={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+    if(!S.f4) S.f4={f:{vis:0,ldsg:0,lds:0,vnd:0},ol:[],ov:[],rc:[]};
+    if(!S.ca) S.ca={grupos:0,membros:0,leads:0,wgroups:[],dias:[]};
+    if(!S.ca.wgroups) S.ca.wgroups=[];
+    if(!S.ca.dias) S.ca.dias=[];
+    if(!S.cp) S.cp={grupos:0,membros:0,wgroups:[],dias:[]};
+    if(!S.cp.wgroups) S.cp.wgroups=[];
+    if(!S.cp.dias) S.cp.dias=[];
+    if(!S.cac) S.cac={grupos:0,membros:0,wgroups:[],dias:[]};
+    if(!S.cac.wgroups) S.cac.wgroups=[];
+    if(!S.cac.dias) S.cac.dias=[];
+    if(!S.pt) S.pt={f:{vis:0}};
+    if(!S.pt.f) S.pt.f={vis:(+S.pt.vis||0)};
+    if(!S.wk) S.wk={f:{vis:0,lds:0},diario:{}};
+    if(!S.wk.f) S.wk.f={vis:0,lds:0};
+    if(!S.wk.diario) S.wk.diario={};
+    if(!S.awn) S.awn={f:{vis:0}};
+    if(!S.awn.f) S.awn.f={vis:0};
+    if(S.fo.f.ldsg===undefined) S.fo.f.ldsg=0;
+        if(S.fo.f.vnd===undefined) S.fo.f.vnd=0;
+        applyMlLeads();
+        applyAtrLeads();
+        setTsBadge(tsToStr(newTs)||nowStr());
+        renderAll();
+      }
+    }
+  }catch(e){}
+}
+
+async function saveData(){
+  const btn=document.getElementById('savebtn');
+  btn.textContent='Salvando...';
+  btn.disabled=true;
+  await sbSave(S);
+  _lastSbTs=new Date().toISOString();
+  setTsBadge(nowStr());
+  btn.textContent='Salvo ✓';
+  btn.disabled=false;
+  setTimeout(()=>btn.textContent='Salvar',2000);
+}
+
+function switchProd(p){
+  document.querySelectorAll('.product-page').forEach(e=>e.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.body.classList.toggle('awards-theme', p==='awardsnew'); // fundo #000 só na aba Awards
+  const concluidosPages = ['awards','formacaot3','formacaot4','comunidades','founders','acelera','lideres'];
+  let parent = p;
+  if(concluidosPages.includes(p)) parent='outros';
+  document.querySelectorAll('.prod-tab').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector('[data-prod="'+parent+'"]');
+  if(btn) btn.classList.add('active');
+  // re-renderiza gráficos que dependem da largura visível ao abrir a aba
+  if(p==='partners') ptCharts();
+  else if(p==='workshop') wkCharts();
+  else if(p==='awardsnew') awnCharts();
+}
+
+// ── CALCS ──────────────────────────────────────────────────────────
+function awCalc(){
+  const f=S.aw.f, c=f.vis>0?(f.lds/f.vis*100):0;
+  set('aw-vis',(f.vis||0).toLocaleString('pt-BR'));
+  set('aw-lds',(f.lds||0).toLocaleString('pt-BR'));
+  set('aw-conv',pctFmt(c));
+  set('aw-vnd',(f.vnd||0).toString());
+  set('aw-ing',(f.ing||0).toString());
+  set('aw-rec',brl(f.rec||0));
+}
+function awTpCalc(){
+  if(!S.aw.tp) S.aw.tp={inv:0,alc:0,cpm:0,clk:0,ctr:0,cpc:0,ic:0,vnd:0,rec:0};
+  const t=S.aw.tp;
+  const cpic = t.ic>0   ? t.inv/t.ic  : 0;
+  const cpv  = t.vnd>0  ? t.inv/t.vnd : 0;
+  const roas = t.inv>0  ? t.rec/t.inv : 0;
+  set('aw-tp-inv', brl(t.inv||0));
+  set('aw-tp-alc', (t.alc||0).toLocaleString('pt-BR'));
+  set('aw-tp-cpm', brl(t.cpm||0));
+  set('aw-tp-clk', (t.clk||0).toLocaleString('pt-BR'));
+  set('aw-tp-ctr', pctFmt(t.ctr||0));
+  set('aw-tp-cpc', brl(t.cpc||0));
+  set('aw-tp-ic',  (t.ic||0).toString());
+  set('aw-tp-cpic',brl(cpic));
+  set('aw-tp-vnd', (t.vnd||0).toString());
+  set('aw-tp-rec', brl(t.rec||0));
+  set('aw-tp-cpv', brl(cpv));
+  set('aw-tp-roas', roas.toFixed(2).replace('.',',')+'x');
+}
+function renderAwOv(){
+  if(!S.aw.ov) S.aw.ov=[];
+  const raw=S.aw.ov;
+  const totQ=sum(raw.map(r=>r.q||0));
+  const totR=sum(raw.map(r=>r.r||0));
+  const d=applySort(raw,'aw-ov','q');
+  const tbody=document.getElementById('tb-aw-ov');
+  if(!tbody) return;
+  document.querySelector('#tb-aw-ov').closest('table').querySelector('thead tr').innerHTML=
+    thS('aw-ov','o','Origem')+thS('aw-ov','q','QTD')+thS('aw-ov','r','Receita (R$)')+'<th>%</th>'+(isA()?'<th></th>':'');
+  tbody.innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=totQ>0?Math.round((r.q||0)/totQ*100):0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="text" value="${r.o||''}" ${!isA()?'readonly':''} oninput="S.aw.ov[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.q||0}" ${!isA()?'readonly':''} oninput="S.aw.ov[${i}].q=+this.value;renderAwOv()"></td>
+      <td><input type="number" value="${r.r||0}" step="0.01" ${!isA()?'readonly':''} oninput="S.aw.ov[${i}].r=+this.value;renderAwOv()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('aw-ov',${i})">✕</button></td>`:''}`;
+    tbody.appendChild(tr);
+  });
+  const tq=document.getElementById('tot-aw-ov-q'); if(tq) tq.textContent=totQ;
+  const tr2=document.getElementById('tot-aw-ov-r'); if(tr2) tr2.textContent=brl(totR);
+  barV('ch-aw-ov',raw.map(r=>r.o||''),raw.map(r=>r.q||0));
+}
+function foCalc(){
+  const f=S.fo.f;
+  const c  = f.vis>0  ? (f.lds/f.vis*100)   : 0;
+  const cv = (f.ldsg||0)>0 ? (f.vnd/(f.ldsg)*100) : 0;
+  set('fo-vis',f.vis.toLocaleString('pt-BR'));
+  set('fo-ldsg',(f.ldsg||0).toLocaleString('pt-BR'));
+  set('fo-lds',f.lds.toLocaleString('pt-BR'));
+  set('fo-conv',pctFmt(c));
+  set('fo-vnd',(f.vnd||0).toString());
+  set('fo-cvnd',pctFmt(cv));
+}
+function fnCalc(){
+  const f=S.fn.f;
+  const c=f.vis>0?(f.lds/f.vis*100):0;
+  const cv=f.lds>0?(f.vnd/f.lds*100):0;
+  set('fn-vis',(f.vis||0).toLocaleString('pt-BR'));
+  set('fn-lds',(f.lds||0).toLocaleString('pt-BR'));
+  set('fn-conv',pctFmt(c));
+  set('fn-vnd',(f.vnd||0).toString());
+  set('fn-cvnd',pctFmt(cv));
+}
+
+
+// ── FORMAÇÃO TABLES ────────────────────────────────────────────────
+function renderFoOl(){
+  const raw=S.fo.ol, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'fo-ol','v');
+  document.querySelector('#tb-fo-ol').closest('table').querySelector('thead tr').innerHTML=
+    thS('fo-ol','o','Origem')+thS('fo-ol','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fo-ol').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?(r.v/tot*100).toFixed(2):'0.00';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.fo.ol[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.fo.ol[${i}].v=+this.value;renderFoOl()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fo-ol',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fo-ol').appendChild(tr);
+  });
+  set('tot-fo-ol',tot);
+  doughnut('ch-fo-ol',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+function renderFoOv(){
+  const raw=S.fo.ov, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'fo-ov','v');
+  document.querySelector('#tb-fo-ov').closest('table').querySelector('thead tr').innerHTML=
+    thS('fo-ov','o','Origem')+thS('fo-ov','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fo-ov').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?Math.round(r.v/tot*100):'0';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.fo.ov[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.fo.ov[${i}].v=+this.value;renderFoOv()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fo-ov',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fo-ov').appendChild(tr);
+  });
+  set('tot-fo-ov',tot);
+  barV('ch-fo-ov',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+function renderFoRc(){
+  const raw=S.fo.rc;
+  const totLd=sum(raw.map(r=>r.lp||0));
+  const totVnd=sum(raw.map(r=>r.vnd||0));
+  // calc auto fields
+  raw.forEach(r=>{
+    r.lpPct = totLd>0 ? (r.lp/totLd*100) : 0;
+    r.vp    = totVnd>0 ? Math.round(r.vnd/totVnd*100) : 0;
+  });
+  // always sort by lp (lead qty) desc
+  const d=[...raw].sort((a,b)=>(b.lp||0)-(a.lp||0));
+  const tv=totVnd, tl=totLd, tlp=sum(raw.map(r=>r.lpPct)), tvp=sum(raw.map(r=>r.vp));
+  document.querySelector('#tb-fo-rc').closest('table').querySelector('thead tr').innerHTML=
+    '<th>Canal</th><th>Lead por Canal</th><th>Lead por Canal %</th><th>Vendas</th><th>Venda por Canal %</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fo-rc').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="text" value="${r.c}" ${!isA()?'readonly':''} oninput="S.fo.rc[${i}].c=this.value"></td>
+      <td><input type="number" value="${r.lp||0}" ${!isA()?'readonly':''} oninput="S.fo.rc[${i}].lp=+this.value;renderFoRc()"></td>
+      <td class="pct">${(r.lpPct).toFixed(1)}%</td>
+      <td><input type="number" value="${r.vnd||0}" ${!isA()?'readonly':''} oninput="S.fo.rc[${i}].vnd=+this.value;renderFoRc()"></td>
+      <td class="pct">${r.vp}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fo-rc',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fo-rc').appendChild(tr);
+  });
+  const tl_el=document.getElementById('tot-fo-rc-l'); if(tl_el)tl_el.textContent=tl;
+  const tlp_el=document.getElementById('tot-fo-rc-lp'); if(tlp_el)tlp_el.textContent=tlp.toFixed(1)+'%';
+  const tv_el=document.getElementById('tot-fo-rc-v'); if(tv_el)tv_el.textContent=tv;
+  const tvp_el=document.getElementById('tot-fo-rc-vp'); if(tvp_el)tvp_el.textContent=tvp+'%';
+  grouped('ch-fo-rc',d.map(r=>shrt(r.c,18)),d.map(r=>r.lpPct),d.map(r=>r.vp));
+}
+
+
+// ── FOUNDERS TABLES ────────────────────────────────────────────────
+function renderFnOl(){
+  if(!S.fn) return;
+  const raw=S.fn.ol, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'fn-ol','v');
+  document.querySelector('#tb-fn-ol').closest('table').querySelector('thead tr').innerHTML=
+    thS('fn-ol','o','Origem')+thS('fn-ol','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fn-ol').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?(r.v/tot*100).toFixed(2):'0.00';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.fn.ol[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.fn.ol[${i}].v=+this.value;renderFnOl()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fn-ol',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fn-ol').appendChild(tr);
+  });
+  set('tot-fn-ol',tot);
+  doughnut('ch-fn-ol',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+function renderFnOv(){
+  if(!S.fn) return;
+  const raw=S.fn.ov, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'fn-ov','v');
+  document.querySelector('#tb-fn-ov').closest('table').querySelector('thead tr').innerHTML=
+    thS('fn-ov','o','Origem')+thS('fn-ov','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fn-ov').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?Math.round(r.v/tot*100):'0';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.fn.ov[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.fn.ov[${i}].v=+this.value;renderFnOv()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fn-ov',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fn-ov').appendChild(tr);
+  });
+  set('tot-fn-ov',tot);
+  barV('ch-fn-ov',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+// ── ADD / DEL ──────────────────────────────────────────────────────
+const DS={
+  'aw-ov':()=>S.aw.ov,
+  'fo-ol':()=>S.fo.ol,'fo-ov':()=>S.fo.ov,'fo-rc':()=>S.fo.rc,
+  'fl-ol':()=>S.fl.ol,'fl-ov':()=>S.fl.ov,
+  'fn-ol':()=>S.fn.ol,'fn-ov':()=>S.fn.ov,
+  'f4-ol':()=>S.f4.ol,'f4-ov':()=>S.f4.ov,'f4-rc':()=>S.f4.rc
+};
+const NR={
+  'aw-ov':()=>({o:'Nova origem',q:0,r:0}),
+  'fo-ol':()=>({o:'Nova origem',v:0}),'fo-ov':()=>({o:'Nova origem',v:0}),'fo-rc':()=>({c:'Novo canal',vnd:0,lp:0}),
+  'fl-ol':()=>({o:'Nova origem',v:0}),'fl-ov':()=>({o:'Nova origem',v:0}),
+  'fn-ol':()=>({o:'Nova origem',v:0}),'fn-ov':()=>({o:'Nova origem',v:0}),
+  'f4-ol':()=>({o:'Nova origem',v:0}),'f4-ov':()=>({o:'Nova origem',v:0}),'f4-rc':()=>({c:'Novo canal',vnd:0,lp:0})
+};
+const RE={
+  'aw-ov':renderAwOv,
+  'fo-ol':renderFoOl,'fo-ov':renderFoOv,'fo-rc':renderFoRc,
+  'fl-ol':renderFlOl,'fl-ov':renderFlOv,
+  'fn-ol':renderFnOl,'fn-ov':renderFnOv,
+  'f4-ol':renderF4Ol,'f4-ov':renderF4Ov,'f4-rc':renderF4Rc
+};
+function addR(id){DS[id]().push(NR[id]());RE[id]();}
+function delR(id,i){DS[id]().splice(i,1);RE[id]();}
+function updTot(totId,arr,key){set(totId,sum(arr.map(r=>r[key])));}
+
+
+// ── FORMAÇÃO LÍDERES ──────────────────────────────────────────────
+function flCalc(){
+  if(!S.fl) S.fl={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+  const f=S.fl.f;
+  const c=f.vis>0?(f.lds/f.vis*100):0;
+  const cv=f.lds>0?(f.vnd/f.lds*100):0;
+  set('fl-vis',(f.vis||0).toLocaleString('pt-BR'));
+  set('fl-lds',(f.lds||0).toLocaleString('pt-BR'));
+  set('fl-conv',pctFmt(c));
+  set('fl-vnd',(f.vnd||0).toString());
+  set('fl-cvnd',pctFmt(cv));
+}
+
+function renderFlOl(){
+  if(!S.fl) return;
+  const raw=S.fl.ol, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'fl-ol','v');
+  const thead=document.querySelector('#tb-fl-ol')?.closest('table')?.querySelector('thead tr');
+  if(!thead) return;
+  thead.innerHTML=thS('fl-ol','o','Origem')+thS('fl-ol','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fl-ol').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?(r.v/tot*100).toFixed(2):'0.00';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.fl.ol[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.fl.ol[${i}].v=+this.value;renderFlOl()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fl-ol',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fl-ol').appendChild(tr);
+  });
+  set('tot-fl-ol',tot);
+  doughnut('ch-fl-ol',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+function renderFlOv(){
+  if(!S.fl) return;
+  const raw=S.fl.ov, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'fl-ov','v');
+  const thead=document.querySelector('#tb-fl-ov')?.closest('table')?.querySelector('thead tr');
+  if(!thead) return;
+  thead.innerHTML=thS('fl-ov','o','Origem')+thS('fl-ov','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-fl-ov').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?Math.round(r.v/tot*100):'0';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.fl.ov[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.fl.ov[${i}].v=+this.value;renderFlOv()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('fl-ov',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-fl-ov').appendChild(tr);
+  });
+  set('tot-fl-ov',tot);
+  barV('ch-fl-ov',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+// ── DROPDOWN ──────────────────────────────────────────────────────
+function toggleDropdown(id){
+  const menu=document.getElementById('dropdown-menu-'+id);
+  menu.classList.toggle('open');
+}
+function selectDropdown(prod){
+  // close all dropdowns
+  document.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('open'));
+  switchProd(prod);
+  // mark active item inside dropdown
+  document.querySelectorAll('.dropdown-menu button').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'"+prod+"'"));
+  });
+}
+// close dropdown when clicking outside
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.dropdown-tab')){
+    document.querySelectorAll('.dropdown-menu').forEach(m=>m.classList.remove('open'));
+  }
+});
+
+// ── FORMAÇÃO T4 CALC ──────────────────────────────────────────────
+function f4Calc(){
+  if(!S.fl) S.fl={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+    if(!S.f4) S.f4={f:{vis:0,ldsg:0,lds:0,vnd:0},ol:[],ov:[],rc:[]};
+  const f=S.f4.f;
+  const c  = f.vis>0  ? (f.lds/f.vis*100) : 0;
+  const cv = (f.ldsg||0)>0 ? (f.vnd/f.ldsg*100) : 0;
+  set('f4-vis',(f.vis||0).toLocaleString('pt-BR'));
+  set('f4-ldsg',(f.ldsg||0).toLocaleString('pt-BR'));
+  set('f4-lds',(f.lds||0).toLocaleString('pt-BR'));
+  set('f4-conv',pctFmt(c));
+  set('f4-vnd',(f.vnd||0).toString());
+  set('f4-cvnd',pctFmt(cv));
+}
+
+// ── FORMAÇÃO T4 TABLES ────────────────────────────────────────────
+function renderF4Ol(){
+  if(!S.f4) return;
+  const raw=S.f4.ol, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'f4-ol','v');
+  const thead=document.querySelector('#tb-f4-ol')?.closest('table')?.querySelector('thead tr');
+  if(!thead) return;
+  thead.innerHTML=thS('f4-ol','o','Origem')+thS('f4-ol','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-f4-ol').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?(r.v/tot*100).toFixed(2):'0.00';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.f4.ol[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.f4.ol[${i}].v=+this.value;renderF4Ol()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('f4-ol',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-f4-ol').appendChild(tr);
+  });
+  set('tot-f4-ol',tot);
+  doughnut('ch-f4-ol',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+function renderF4Ov(){
+  if(!S.f4) return;
+  const raw=S.f4.ov, tot=sum(raw.map(r=>r.v));
+  const d=applySort(raw,'f4-ov','v');
+  const thead=document.querySelector('#tb-f4-ov')?.closest('table')?.querySelector('thead tr');
+  if(!thead) return;
+  thead.innerHTML=thS('f4-ov','o','Origem')+thS('f4-ov','v','Qtd')+'<th>%</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-f4-ov').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const p=tot>0?Math.round(r.v/tot*100):'0';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.o}" ${!isA()?'readonly':''} oninput="S.f4.ov[${i}].o=this.value"></td>
+      <td><input type="number" value="${r.v}" ${!isA()?'readonly':''} oninput="S.f4.ov[${i}].v=+this.value;renderF4Ov()"></td>
+      <td class="pct">${p}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('f4-ov',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-f4-ov').appendChild(tr);
+  });
+  set('tot-f4-ov',tot);
+  barV('ch-f4-ov',raw.map(r=>r.o),raw.map(r=>r.v));
+}
+
+function renderF4Rc(){
+  if(!S.f4) return;
+  const raw=S.f4.rc;
+  const totVnd=sum(raw.map(r=>r.vnd||0));
+  const totLd=sum(raw.map(r=>r.lp||0));
+  raw.forEach(r=>{
+    r.lpPct=totLd>0?(r.lp/totLd*100):0;
+    r.vp=totVnd>0?Math.round(r.vnd/totVnd*100):0;
+  });
+  const d=[...raw].sort((a,b)=>(b.lp||0)-(a.lp||0));
+  const thead=document.querySelector('#tb-f4-rc')?.closest('table')?.querySelector('thead tr');
+  if(!thead) return;
+  thead.innerHTML='<th>Canal</th><th>Lead por Canal</th><th>Lead por Canal %</th><th>Vendas</th><th>Venda por Canal %</th>'+(isA()?'<th></th>':'');
+  document.getElementById('tb-f4-rc').innerHTML='';
+  d.forEach(r=>{
+    const i=raw.indexOf(r);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="text" value="${r.c||''}" ${!isA()?'readonly':''} oninput="S.f4.rc[${i}].c=this.value"></td>
+      <td><input type="number" value="${r.lp||0}" ${!isA()?'readonly':''} oninput="S.f4.rc[${i}].lp=+this.value;renderF4Rc()"></td>
+      <td class="pct">${(r.lpPct).toFixed(1)}%</td>
+      <td><input type="number" value="${r.vnd||0}" ${!isA()?'readonly':''} oninput="S.f4.rc[${i}].vnd=+this.value;renderF4Rc()"></td>
+      <td class="pct">${r.vp}%</td>
+      ${isA()?`<td><button class="del-btn" onclick="delR('f4-rc',${i})">✕</button></td>`:''}`;
+    document.getElementById('tb-f4-rc').appendChild(tr);
+  });
+  const tv=sum(raw.map(r=>r.vnd||0)), tl=totLd, tlp=sum(raw.map(r=>r.lpPct)), tvp=sum(raw.map(r=>r.vp));
+  set('tot-f4-rc-v',tv);
+  const tl_el=document.getElementById('tot-f4-rc-l'); if(tl_el)tl_el.textContent=tl;
+  const tlp_el=document.getElementById('tot-f4-rc-lp'); if(tlp_el)tlp_el.textContent=tlp.toFixed(1)+'%';
+  const tvp_el=document.getElementById('tot-f4-rc-vp'); if(tvp_el)tvp_el.textContent=tvp+'%';
+  grouped('ch-f4-rc',raw.map(r=>shrt(r.c||'',18)),raw.map(r=>r.lpPct),raw.map(r=>r.vp));
+}
+
+// ── COMUNIDADES ────────────────────────────────────────────────────
+function comCalc(){
+  if(!S.fl) S.fl={f:{vis:0,lds:0,vnd:0},ol:[],ov:[]};
+    if(!S.f4) S.f4={f:{vis:0,ldsg:0,lds:0,vnd:0},ol:[],ov:[],rc:[]};
+    if(!S.ca) S.ca={grupos:0,membros:0,leads:0,wgroups:[],dias:[]};
+  if(!S.cp) S.cp={grupos:0,membros:0,wgroups:[],dias:[]};
+  if(!S.cac) S.cac={grupos:0,membros:0,visitas:0,leads:0,wgroups:[],dias:[]};
+  set('ca-grupos',(S.ca.grupos||0).toString());
+  set('ca-membros',(S.ca.membros||0).toLocaleString('pt-BR'));
+  set('ca-leads',(S.ca.leads||0).toLocaleString('pt-BR'));
+  set('cp-grupos',(S.cp.grupos||0).toString());
+  set('cp-membros',(S.cp.membros||0).toLocaleString('pt-BR'));
+  set('cac-grupos',(S.cac.grupos||0).toString());
+  set('cac-membros',(S.cac.membros||0).toLocaleString('pt-BR'));
+  cacCalc();
+}
+function cacCalc(){
+  const d=S.cac;
+  const v=+d.visitas||0, l=+d.leads||0;
+  const c = v>0 ? (l/v*100) : 0;
+  set('cac-visitas',v.toLocaleString('pt-BR'));
+  set('cac-leads',l.toLocaleString('pt-BR'));
+  set('cac-conv',pctFmt(c));
+}
+
+// ── GRUPOS WHATSAPP ────────────────────────────────────────────────
+function renderComGrupos(id){
+  const d=S[id];
+  if(!d.wgroups) d.wgroups=[];
+  const tbody=document.getElementById('tb-'+id+'-grupos');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  d.wgroups.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="text" value="${r.g||''}" ${!isA()?'readonly':''} oninput="S.${id}.wgroups[${i}].g=this.value"></td>
+      <td><input type="number" value="${r.m||0}" ${!isA()?'readonly':''} oninput="S.${id}.wgroups[${i}].m=+this.value"></td>
+      <td><input type="text" value="${r.tx||''}" placeholder="ex: 30%" ${!isA()?'readonly':''} oninput="S.${id}.wgroups[${i}].tx=this.value" style="width:90px"></td>
+      ${isA()?`<td><button class="del-btn" onclick="delComGrupo('${id}',${i})">✕</button></td>`:''}`;
+    tbody.appendChild(tr);
+  });
+}
+function addComGrupo(id){
+  const d=S[id];
+  if(!d.wgroups) d.wgroups=[];
+  d.wgroups.push({g:'Grupo '+(d.wgroups.length+1),m:0,tx:''});
+  renderComGrupos(id);
+}
+function delComGrupo(id,i){
+  const d=S[id];
+  d.wgroups.splice(i,1);
+  renderComGrupos(id);
+}
+
+// ── CRESCIMENTO DIÁRIO ────────────────────────────────────────────
+function renderComDias(id){
+  const d=S[id];
+  if(!d.dias) d.dias=[];
+  const dias=d.dias; // stored oldest→newest, displayed newest→oldest
+  const tbody=document.getElementById('tb-'+id+'-dias');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  // display reversed: newest first
+  const reversed=[...dias].reverse();
+  reversed.forEach((r,ri)=>{
+    const i=dias.length-1-ri; // real index in original array
+    const tr=document.createElement('tr');
+    tr.style.display='table-row';
+    tr.innerHTML=`
+      <td><input type="text" value="${r.d||''}" ${!isA()?'readonly':''} oninput="S.${id}.dias[${i}].d=this.value"></td>
+      <td><input type="number" value="${r.m||0}" ${!isA()?'readonly':''} oninput="S.${id}.dias[${i}].m=+this.value;renderComDias('${id}')"></td>
+      ${isA()?`<td><button class="del-btn" onclick="delComDia('${id}',${i})">✕</button></td>`:''}`;
+    tbody.appendChild(tr);
+  });
+  // most recent value in footer
+  const last=dias.length>0?(dias[dias.length-1].m||0):0;
+  const tot=document.getElementById('tot-'+id+'-dias');
+  if(tot) tot.textContent=last.toLocaleString('pt-BR');
+  renderComChart(id, dias);
+}
+function addComDia(id){
+  const d=S[id];
+  if(!d.dias) d.dias=[];
+  // add to beginning of display = push to array (oldest→newest)
+  // new entry goes at start of display (newest), so push to END of array
+  d.dias.push({d:'',m:0});
+  renderComDias(id);
+  // scroll tbody to top so newest is visible
+  const tbody=document.getElementById('tb-'+id+'-dias');
+  if(tbody) tbody.scrollTop=0;
+}
+function delComDia(id,i){
+  const d=S[id];
+  d.dias.splice(i,1);
+  renderComDias(id);
+}
+
+// ── CHART COM LINHA TENDÊNCIA ──────────────────────────────────────
+function renderComChart(id, dias){
+  dch('ch-'+id+'-dias');
+  const ctx=document.getElementById('ch-'+id+'-dias');
+  if(!ctx||!dias.length) return;
+  // chart shows oldest→newest (chronological)
+  const labels=dias.map(r=>r.d||'');
+  const vals=dias.map(r=>r.m||0);
+  const n=vals.length;
+  let trendData=[];
+  if(n>=2){
+    const validIdx=vals.map((v,i)=>v>0?i:-1).filter(i=>i>=0);
+    if(validIdx.length>=2){
+      const xs=validIdx;
+      const ys=validIdx.map(i=>Math.log(vals[i]));
+      const xm=xs.reduce((a,b)=>a+b,0)/xs.length;
+      const ym=ys.reduce((a,b)=>a+b,0)/ys.length;
+      const num=xs.reduce((s,x,j)=>s+(x-xm)*(ys[j]-ym),0);
+      const den=xs.reduce((s,x)=>s+(x-xm)**2,0);
+      const b=den!==0?num/den:0;
+      const a=ym-b*xm;
+      trendData=Array.from({length:n},(_,i)=>Math.round(Math.exp(a+b*i)));
+    }
+  }
+  const datasets=[{
+    type:'bar',label:'Membros',data:vals,
+    backgroundColor:'rgba(16,185,129,0.55)',borderColor:'#10b981',
+    borderWidth:1,borderRadius:4,order:2,
+    datalabels:{anchor:'end',align:'top',offset:2,clamp:true,color:'#9ca3af',font:{family:"'Geist'",size:10,weight:'500'},formatter:(v)=>v?Number(v).toLocaleString('pt-BR'):''}
+  }];
+  if(trendData.length){
+    datasets.push({
+      type:'line',label:'Tendência',data:trendData,
+      borderColor:'#f59e0b',borderWidth:2,pointRadius:3,
+      pointBackgroundColor:'#f59e0b',fill:false,tension:0.4,order:1,
+      datalabels:{display:false}
+    });
+  }
+  CHS['ch-'+id+'-dias']=new Chart(ctx,{
+    data:{labels,datasets},
+    options:{
+      layout:{padding:{top:22}},
+      plugins:{
+        legend:{display:true,labels:{color:'#9ca3af',font:{family:"'Geist'",size:11},boxWidth:12}},
+        tooltip:{backgroundColor:'#1f2937',titleColor:'#e8eaf0',bodyColor:'#9ca3af',padding:10,cornerRadius:8}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#6b7280',font:{family:"'Geist'",size:10},maxRotation:45}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7280',font:{family:"'Geist'",size:11}}}
+      },
+      maintainAspectRatio:false
+    }
+  });
+}
+
+// ── CHARTS ─────────────────────────────────────────────────────────
+function barH(id,data,lk,vk){
+  dch(id);const ctx=document.getElementById(id);if(!ctx)return;
+  const sorted=[...data].sort((a,b)=>b[vk]-a[vk]);
+  CHS[id]=new Chart(ctx,{type:'bar',data:{labels:sorted.map(r=>shrt(r[lk])),datasets:[{data:sorted.map(r=>r[vk]),backgroundColor:'rgba(16,185,129,0.55)',borderColor:'#10b981',borderWidth:1,borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:noLegend,tooltip:TT},scales:{x:{grid:GR,ticks:TX},y:{grid:{display:false},ticks:{...TX,font:{size:10,family:"'Geist'"}}}},maintainAspectRatio:false}});
+}
+function barV(id,labels,data){
+  dch(id);const ctx=document.getElementById(id);if(!ctx)return;
+  const total=data.reduce((a,b)=>a+b,0);
+  CHS[id]=new Chart(ctx,{type:'bar',data:{labels:labels.map(l=>shrt(l,13)),datasets:[{data,backgroundColor:CLRS.map(c=>c+'aa'),borderColor:CLRS,borderWidth:1,borderRadius:5}]},options:{layout:{padding:{top:22}},plugins:{legend:noLegend,tooltip:TT,datalabels:{anchor:'end',align:'top',offset:2,clamp:true,color:'#9ca3af',font:{family:"'Geist'",size:10,weight:'500'},formatter:(v)=>{if(!v)return '';const p=total>0?Math.round(v/total*100):0;return Number(v).toLocaleString('pt-BR')+' · '+p+'%';}}},scales:{x:{grid:{display:false},ticks:TX},y:{grid:GR,ticks:TX}},maintainAspectRatio:false}});
+}
+function doughnut(id,labels,data){
+  dch(id);const ctx=document.getElementById(id);if(!ctx)return;
+  const total=data.reduce((a,b)=>a+b,0);
+  CHS[id]=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:CLRS.map(c=>c+'cc'),borderColor:'#111318',borderWidth:2}]},options:{plugins:{legend:{position:'right',labels:{color:'#9ca3af',font:{family:"'Geist'",size:11},boxWidth:12,padding:10}},tooltip:TT,datalabels:{color:'#fff',font:{family:"'Geist'",size:11,weight:'600'},formatter:(v)=>{if(!total||v/total<0.04)return '';return Math.round(v/total*100)+'%';}}},cutout:'52%',maintainAspectRatio:false}});
+}
+function grouped(id,labels,d1,d2){
+  dch(id);const ctx=document.getElementById(id);if(!ctx)return;
+  CHS[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Lead por Canal %',data:d1,backgroundColor:'rgba(16,185,129,0.6)',borderColor:'#10b981',borderWidth:1,borderRadius:4},{label:'Venda por Canal %',data:d2,backgroundColor:'rgba(52,211,153,0.4)',borderColor:'#34d399',borderWidth:1,borderRadius:4}]},options:{layout:{padding:{top:18}},plugins:{legend:{display:true,labels:{color:'#9ca3af',font:{family:"'Geist'",size:12},boxWidth:12}},tooltip:TT,datalabels:{anchor:'end',align:'top',offset:2,clamp:true,color:'#9ca3af',font:{family:"'Geist'",size:10,weight:'500'},formatter:(v)=>v?Math.round(v)+'%':''}},scales:{x:{grid:{display:false},ticks:TX},y:{grid:GR,ticks:TX}},maintainAspectRatio:false}});
+}
+
+// Mantém o usuário logado após refresh (restaura sessão do localStorage)
+restoreSession();
+</script>
+</body>
+</html>

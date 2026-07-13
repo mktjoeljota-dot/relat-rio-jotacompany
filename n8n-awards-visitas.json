@@ -1,0 +1,189 @@
+{
+  "name": "Awards - Visitas GA4 -> Supabase",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8,
+              "triggerAtMinute": 10
+            }
+          ]
+        }
+      },
+      "id": "schedule-8h10",
+      "name": "Todo dia as 8h10",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://analyticsdata.googleapis.com/v1beta/properties/544310767:runReport",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"dateRanges\": [{ \"startDate\": \"2020-01-01\", \"endDate\": \"today\" }],\n  \"metrics\": [{ \"name\": \"activeUsers\" }]\n}",
+        "options": {}
+      },
+      "id": "ga4-runreport",
+      "name": "GA4 - activeUsers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Conta de Serviço - n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://wdkcuoydbjkeoyslpbpv.supabase.co/rest/v1/dashboard_state?id=eq.main&select=data",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indka2N1b3lkYmprZW95c2xwYnB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI2MDMsImV4cCI6MjA4NDE2ODYwM30.WROw47VDb3OEQ-zPDhAQEsEvzWz6ZKqFoCNdwm-SFSs"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indka2N1b3lkYmprZW95c2xwYnB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI2MDMsImV4cCI6MjA4NDE2ODYwM30.WROw47VDb3OEQ-zPDhAQEsEvzWz6ZKqFoCNdwm-SFSs"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.pgrst.object+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-state",
+      "name": "Buscar dashboard_state",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Visitas do GA4 (sem dimensao = 1 linha com o total)\nconst gaItem = $('GA4 - activeUsers').first();\nconst visitas = parseInt(gaItem?.json?.rows?.[0]?.metricValues?.[0]?.value ?? '0', 10) || 0;\n\n// Estado atual (o GET pode vir como objeto {data:{...}} ou array [{data:{...}}])\nconst stItem = $('Buscar dashboard_state').first();\nconst row = stItem?.json;\nlet rawData = (Array.isArray(row) ? row?.[0]?.data : row?.data) || {};\nif (typeof rawData === 'string') { try { rawData = JSON.parse(rawData); } catch(e){ rawData = {}; } }\n\n// Reconstroi o estado gravando SO em awn.f.vis (aba Awards). NAO mexe em wk!\nconst prevAwn = (rawData.awn && typeof rawData.awn === 'object') ? rawData.awn : {};\nconst prevAwnF = (prevAwn.f && typeof prevAwn.f === 'object') ? prevAwn.f : {};\nconst state = { ...rawData, awn: { ...prevAwn, f: { ...prevAwnF, vis: visitas } } };\n\nreturn [{ json: { data: state, updated_at: new Date().toISOString(), visitas } }];"
+      },
+      "id": "merge-vis",
+      "name": "Merge awn.f.vis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://wdkcuoydbjkeoyslpbpv.supabase.co/rest/v1/dashboard_state?id=eq.main",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indka2N1b3lkYmprZW95c2xwYnB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI2MDMsImV4cCI6MjA4NDE2ODYwM30.WROw47VDb3OEQ-zPDhAQEsEvzWz6ZKqFoCNdwm-SFSs"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indka2N1b3lkYmprZW95c2xwYnB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTI2MDMsImV4cCI6MjA4NDE2ODYwM30.WROw47VDb3OEQ-zPDhAQEsEvzWz6ZKqFoCNdwm-SFSs"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"data\": $json.data, \"updated_at\": $json.updated_at } }}",
+        "options": {}
+      },
+      "id": "patch-state",
+      "name": "Salvar no Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Todo dia as 8h10": {
+      "main": [
+        [
+          {
+            "node": "GA4 - activeUsers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GA4 - activeUsers": {
+      "main": [
+        [
+          {
+            "node": "Buscar dashboard_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar dashboard_state": {
+      "main": [
+        [
+          {
+            "node": "Merge awn.f.vis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge awn.f.vis": {
+      "main": [
+        [
+          {
+            "node": "Salvar no Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "",
+  "meta": {},
+  "tags": []
+}
