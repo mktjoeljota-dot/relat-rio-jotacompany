@@ -30,7 +30,7 @@
   /* LOGIN */
   #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 30% 60%,rgba(249,115,22,0.10) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(251,146,60,0.06) 0%,transparent 50%),var(--bg); }
   .login-box { width:380px; padding:2.5rem; background:var(--bg2); border:1px solid var(--border2); border-radius:16px; }
-  .login-logo { font-family:'Geist Mono',monospace; font-size:11px; color:var(--accent2); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:2rem; }
+  .login-logo { font-family:'Geist Mono',monospace; font-size:17px; font-weight:700; color:var(--accent2); letter-spacing:0.22em; text-transform:uppercase; margin-bottom:2rem; }
   .login-title { font-size:22px; font-weight:600; margin-bottom:0.3rem; }
   .login-sub { font-size:14px; color:var(--muted); margin-bottom:2rem; }
   .form-group { margin-bottom:1.1rem; }
@@ -107,7 +107,7 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">▸ JOTA · Relatórios</div>
+    <div class="login-logo">JOTA COMPANY</div>
     <div class="login-title">Bem-vindo</div>
     <div class="login-sub">Acesse o painel de relatórios</div>
     <div class="form-group"><label>E-mail</label><input type="email" id="ei" placeholder="seu@email.com"></div>
@@ -127,7 +127,7 @@
       </div>
     </div>
     <div class="header-right">
-      <div class="user-badge">Bem-vindo, <strong id="uname"></strong></div>
+      <div class="user-badge" id="user-badge"></div>
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
@@ -215,8 +215,8 @@ const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 // ── AUTH ──────────────────────────────────────────────────────────
 const USERS = {
   'guilherme@admin.com': { pass:'admin123', role:'admin', name:'Guilherme' },
-  'raphael@atrin.ca':    { pass:'raphael123', role:'viewer', name:'Raphael' },
-  'Malu':                { pass:'Malu@Equipe789', role:'admin', name:'Malu' }
+  'Rapnael.torezani@joeljota.com': { pass:'Raphael@Equipe789', role:'admin', name:'Raphael', greet:'Bem vindo' },
+  'Malu':                { pass:'Malu@Equipe789', role:'admin', name:'Malu', greet:'Bem vinda' }
 };
 let me = null;
 const SESSION_KEY='jota_dash_session';
@@ -381,7 +381,9 @@ document.getElementById('dt-apply').addEventListener('click',()=>loadLaila('cust
 
 // ── BOOT ──────────────────────────────────────────────────────────
 function initApp(){
-  set('uname',me.role==='viewer'?'meu patrão':me.name);
+  const disp=me.role==='viewer'?'meu patrão':me.name;
+  const badge=document.getElementById('user-badge');
+  if(badge) badge.innerHTML=(me.greet||'Bem-vindo')+', <strong>'+disp+'</strong>';
   loadLaila('hoje'); // padrão
 }
 restoreSession();
