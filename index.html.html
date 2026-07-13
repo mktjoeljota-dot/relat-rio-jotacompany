@@ -31,6 +31,7 @@
   #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 30% 60%,rgba(249,115,22,0.10) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(251,146,60,0.06) 0%,transparent 50%),var(--bg); }
   .login-box { width:380px; padding:2.5rem; background:var(--bg2); border:1px solid var(--border2); border-radius:16px; }
   .login-logo { font-family:'Geist Mono',monospace; font-size:17px; font-weight:700; color:var(--accent2); letter-spacing:0.22em; text-transform:uppercase; margin-bottom:2rem; }
+  .login-logo-img { display:block; width:220px; max-width:80%; height:auto; margin-bottom:2rem; }
   .login-title { font-size:22px; font-weight:600; margin-bottom:0.3rem; }
   .login-sub { font-size:14px; color:var(--muted); margin-bottom:2rem; }
   .form-group { margin-bottom:1.1rem; }
@@ -48,6 +49,7 @@
   .header { background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:60px; position:sticky; top:0; z-index:20; }
   .header-left { display:flex; align-items:center; gap:2rem; }
   .brand { font-family:'Geist Mono',monospace; font-size:11px; color:var(--accent2); letter-spacing:0.14em; text-transform:uppercase; }
+  .brand-logo { height:26px; width:auto; display:block; }
   .prod-tabs { display:flex; gap:4px; }
   .prod-tab { padding:7px 20px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1px solid transparent; background:transparent; color:var(--muted); transition:all 0.18s; }
   .prod-tab.active { background:var(--accent); color:#fff; }
@@ -107,7 +109,7 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">JOTA COMPANY</div>
+    <img class="login-logo-img" src="logo.png" alt="JOTA COMPANY">
     <div class="login-title">Bem-vindo</div>
     <div class="login-sub">Acesse o painel de relatórios</div>
     <div class="form-group"><label>E-mail</label><input type="email" id="ei" placeholder="seu@email.com"></div>
@@ -121,7 +123,7 @@
 <div id="app">
   <header class="header">
     <div class="header-left">
-      <div class="brand">▸ JOTA</div>
+      <img class="brand-logo" src="logo.png" alt="JOTA COMPANY">
       <div class="prod-tabs">
         <button class="prod-tab active">LAILA</button>
       </div>
